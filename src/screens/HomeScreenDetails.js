@@ -7,6 +7,7 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
+  TextInput,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/Feather";
@@ -16,6 +17,9 @@ export default function HomeScreenDetails() {
   const navigation = useNavigation();
 
   const [loading, setLoading] = useState(true);
+  const [searchText, setSearchText] = useState("");
+  const [notifications, setNotifications] = useState(3);
+  const [showSearch, setShowSearch] = useState(false);
 
   useEffect(() => {
     setTimeout(() => {
@@ -36,10 +40,10 @@ export default function HomeScreenDetails() {
     "Business Setup","Franchise","CA Help","Legal Help"
   ];
 
-  const [activeCategory, setActiveCategory] = useState(null);
+  const [activeCategory, setActiveCategory] = useState("ALL");
 
   const handleCategoryPress = (cat) => {
-    setActiveCategory(prev => prev === cat ? null : cat);
+    setActiveCategory(prev => prev === cat ? "ALL" : cat);
   };
 
   const experts = Array.from({ length: 30 }, (_, i) => ({
@@ -51,46 +55,36 @@ export default function HomeScreenDetails() {
     image: "https://randomuser.me/api/portraits/men/1.jpg",
   }));
 
-  const filteredExperts = activeCategory
-    ? experts.filter((item) => item.category === activeCategory)
-    : experts;
+  const filteredExperts =
+    activeCategory === "ALL"
+      ? experts
+      : activeCategory === "POPULAR"
+      ? experts.slice(0, 10)
+      : experts.filter((item) => item.category === activeCategory);
 
-  // 🔥 SHIMMER LOADING UI
+  const finalExperts = filteredExperts.filter((item) =>
+    item.name.toLowerCase().includes(searchText.toLowerCase()) ||
+    item.category.toLowerCase().includes(searchText.toLowerCase())
+  );
+
+  // 🔥 LOADING UI
   if (loading) {
     return (
       <View style={styles.container}>
-        
-        {/* HEADER */}
         <View style={styles.header}>
           <Text style={styles.logo}>Enquire</Text>
-          <Icon name="search" size={20} />
+
+          <View style={styles.headerIcons}>
+            <Icon name="search" size={20} style={styles.iconSpace} />
+            <Icon name="message-circle" size={20} style={styles.iconSpace} />
+            <Icon name="bell" size={20} />
+          </View>
         </View>
 
-        {/* CATEGORY SHIMMER */}
-        <View style={styles.categoryWrapper}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {[1,2,3,4,5,6].map((item) => (
-              <View
-                key={item}
-                style={{
-                  width: 60 + Math.random() * 40,
-                  height: 30,
-                  borderRadius: 20,
-                  backgroundColor: "#e0e0e0",
-                  marginHorizontal: 5,
-                }}
-              />
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* SHIMMER LIST */}
         <FlatList
-          data={[1,2,3,4,5]}
+          data={[1, 2, 3, 4]}
           keyExtractor={(item) => item.toString()}
           renderItem={() => <ShimmerCard />}
-          contentContainerStyle={{ paddingBottom: 20 }}
-          showsVerticalScrollIndicator={false}
         />
       </View>
     );
@@ -99,43 +93,105 @@ export default function HomeScreenDetails() {
   return (
     <View style={styles.container}>
       
-      {/* HEADER */}
+      {/* 🔥 HEADER */}
       <View style={styles.header}>
         <Text style={styles.logo}>Enquire</Text>
-        <Icon name="search" size={20} />
+
+        <View style={styles.headerIcons}>
+          
+          <TouchableOpacity
+            style={styles.iconSpace}
+            onPress={() => setShowSearch(!showSearch)}
+          >
+            <Icon name="search" size={20} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.iconSpace}
+            onPress={() =>
+              navigation.navigate("Chat", { expert: { name: "CA Shafaly" } })
+            }
+          >
+            <Icon name="message-circle" size={20} />
+          </TouchableOpacity>
+
+          <View>
+            <Icon name="bell" size={20} />
+            {notifications > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{notifications}</Text>
+              </View>
+            )}
+          </View>
+        </View>
       </View>
 
-      {/* CATEGORY */}
+      {/* 🔍 SEARCH */}
+      {showSearch && (
+        <View style={styles.searchBox}>
+          <Icon name="search" size={18} color="#777" />
+
+          <TextInput
+            placeholder="Search..."
+            value={searchText}
+            onChangeText={setSearchText}
+            style={styles.searchInput}
+            autoFocus
+          />
+
+          <TouchableOpacity onPress={() => {
+            setShowSearch(false);
+            setSearchText("");
+          }}>
+            <Icon name="x" size={18} color="#777" />
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* 🔥 CATEGORY */}
       <View style={styles.categoryWrapper}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+
+          <TouchableOpacity
+            onPress={() => setActiveCategory("ALL")}
+            style={[styles.catBtn, activeCategory === "ALL" && styles.activeCat]}
+          >
+            <Icon name="grid" size={14} color={activeCategory === "ALL" ? "#fff" : "#000"} />
+            <Text style={[styles.catText, activeCategory === "ALL" && styles.activeText]}>
+              {" "}All
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setActiveCategory("POPULAR")}
+            style={[styles.catBtn, activeCategory === "POPULAR" && styles.activeCat]}
+          >
+            <Icon name="trending-up" size={14} color={activeCategory === "POPULAR" ? "#fff" : "#000"} />
+            <Text style={[styles.catText, activeCategory === "POPULAR" && styles.activeText]}>
+              {" "}Popular
+            </Text>
+          </TouchableOpacity>
+
           {categoryPool.map((cat, index) => (
             <TouchableOpacity
               key={index}
               onPress={() => handleCategoryPress(cat)}
-              style={[
-                styles.catBtn,
-                activeCategory === cat && styles.activeCat,
-              ]}
+              style={[styles.catBtn, activeCategory === cat && styles.activeCat]}
             >
-              <Text
-                style={[
-                  styles.catText,
-                  activeCategory === cat && styles.activeText,
-                ]}
-              >
+              <Text style={[styles.catText, activeCategory === cat && styles.activeText]}>
                 {cat}
               </Text>
             </TouchableOpacity>
           ))}
+
         </ScrollView>
       </View>
 
-      {/* EXPERT LIST */}
+      {/* 🔥 LIST */}
       <FlatList
-        data={filteredExperts}
+        data={finalExperts}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={{ paddingBottom: 20 }}
-        showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.card}
@@ -149,16 +205,30 @@ export default function HomeScreenDetails() {
               <View style={{ marginLeft: 10 }}>
                 <Text style={styles.name}>{item.name} ✔</Text>
                 <Text style={styles.role}>{item.role}</Text>
-
                 <Text style={styles.rating}>
                   Category: {item.category}
                 </Text>
               </View>
             </View>
 
+            {/* 🔥 ACTION BUTTONS */}
             <View style={styles.right}>
-              <TouchableOpacity style={styles.callBtn}>
-                <Icon name="phone" size={18} color="#aaa" />
+
+              <TouchableOpacity
+                style={styles.actionBtn}
+                onPress={() =>
+                  navigation.navigate("Chat", { expert: item })
+                }
+              >
+                <Icon name="message-circle" size={18} color="#4CAF50" />
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.actionBtn}>
+                <Icon name="phone-call" size={18} color="#2196F3" />
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.actionBtn}>
+                <Icon name="video" size={18} color="#E91E63" />
               </TouchableOpacity>
 
               <Text style={styles.price}>{item.price}</Text>
@@ -180,8 +250,50 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
+  headerIcons: {
+    flexDirection: "row",
+  },
+
+  iconSpace: {
+    marginRight: 15,
+  },
+
   logo: {
     fontSize: 18,
+    fontWeight: "bold",
+  },
+
+  searchBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    marginHorizontal: 10,
+    marginBottom: 10,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    height: 40,
+  },
+
+  searchInput: {
+    marginLeft: 10,
+    flex: 1,
+  },
+
+  badge: {
+    position: "absolute",
+    right: -6,
+    top: -4,
+    backgroundColor: "red",
+    borderRadius: 10,
+    width: 16,
+    height: 16,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  badgeText: {
+    color: "#fff",
+    fontSize: 10,
     fontWeight: "bold",
   },
 
@@ -190,6 +302,8 @@ const styles = StyleSheet.create({
   },
 
   catBtn: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 15,
     paddingVertical: 8,
     backgroundColor: "#fff",
@@ -252,11 +366,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  callBtn: {
-    backgroundColor: "#eee",
-    padding: 10,
-    borderRadius: 30,
-    marginBottom: 5,
+  actionBtn: {
+    backgroundColor: "#f1f1f1",
+    padding: 8,
+    borderRadius: 25,
+    marginBottom: 6,
   },
 
   price: {

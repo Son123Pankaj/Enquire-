@@ -16,6 +16,7 @@ import EmailLoginScreen from "./src/auth/EmailLoginScreen";
 import  SignupScreen from "./src/auth/SignUpScreen";
 import WalletScreen from "./src/screens/WalletScreen";
 import ProfileScreen   from "./src/screens/ProfileScreen";
+import ForgotPassword  from "./src/auth/ForgotPassword";
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -37,9 +38,10 @@ export default function App() {
          <Stack.Screen name="Booking" component={SlotBookingScreen} />
           <Stack.Screen name="Splash" component={SplashScreen} options={{headerShown: false}} />
            <Stack.Screen name="EmailLogin" component={EmailLoginScreen} options={{headerShown:false}} />
-          <Stack.Screen name="Signup" component={SignupScreen} />
+          <Stack.Screen name="Signup" component={SignupScreen} options={{headerShown:false}} />
            <Stack.Screen name="WalletScreen" component={WalletScreen} />
            <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
+           <Stack.Screen name="ForgotPassword" component={ForgotPassword} options={{headerShown:false}} />
       </Stack.Navigator>
     </NavigationContainer>
   );

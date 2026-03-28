@@ -5,36 +5,26 @@ import {
   Image,
   Animated,
   Dimensions,
-  useColorScheme,
+  Text,
   Easing,
 } from "react-native";
-import LinearGradient from "react-native-linear-gradient";
-import AsyncStorage from "@react-native-async-storage/async-storage"; // 🔥 IMPORTANT
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { width, height } = Dimensions.get("window");
 
 export default function SplashScreen({ navigation }) {
-  const scheme = useColorScheme();
-
   const scaleAnim = useRef(new Animated.Value(0.7)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(40)).current;
 
-  const pulseAnim = useRef(new Animated.Value(1)).current;
   const shimmerAnim = useRef(new Animated.Value(-200)).current;
 
-  const particles = Array.from({ length: 8 }).map(() => ({
-    translateY: useRef(new Animated.Value(Math.random() * height)).current,
-    translateX: useRef(new Animated.Value(Math.random() * width)).current,
-    opacity: useRef(new Animated.Value(Math.random())).current,
-  }));
-
   useEffect(() => {
-    // 🔥 ENTRY ANIMATION
+    // ENTRY ANIMATION
     Animated.parallel([
       Animated.spring(scaleAnim, {
         toValue: 1,
-        friction: 3,
+        friction: 4,
         useNativeDriver: true,
       }),
       Animated.timing(opacityAnim, {
@@ -49,24 +39,7 @@ export default function SplashScreen({ navigation }) {
       }),
     ]).start();
 
-    // 💓 Pulse
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.05,
-          duration: 800,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
-    // ✨ Shimmer
+    // SHIMMER
     Animated.loop(
       Animated.timing(shimmerAnim, {
         toValue: 300,
@@ -76,33 +49,15 @@ export default function SplashScreen({ navigation }) {
       })
     ).start();
 
-    // 💫 Particles
-    particles.forEach((p) => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(p.translateY, {
-            toValue: -50,
-            duration: 4000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(p.opacity, {
-            toValue: 0.2,
-            duration: 2000,
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-    });
-
-    // 🔥 TOKEN CHECK + NAVIGATION
+    // NAVIGATION
     const checkLogin = async () => {
       const token = await AsyncStorage.getItem("token");
 
       setTimeout(() => {
         if (token) {
-          navigation.replace("MainApp"); // ✅ already logged in
+          navigation.replace("MainApp");
         } else {
-          navigation.replace("Onboarding"); // ❌ not logged in
+          navigation.replace("EmailLogin");
         }
       }, 3000);
     };
@@ -110,51 +65,23 @@ export default function SplashScreen({ navigation }) {
     checkLogin();
   }, []);
 
-  const gradientColors =
-    scheme === "dark"
-      ? ["#0f2027", "#203a43", "#2c5364"]
-      : ["#667eea", "#764ba2"];
-
   return (
-    <LinearGradient colors={gradientColors} style={styles.container}>
-      
-      {/* 💫 particles */}
-      {particles.map((p, i) => (
-        <Animated.View
-          key={i}
-          style={[
-            styles.particle,
-            {
-              transform: [
-                { translateY: p.translateY },
-                { translateX: p.translateX },
-              ],
-              opacity: p.opacity,
-            },
-          ]}
-        />
-      ))}
+    <View style={styles.container}>
 
-      {/* 💎 glow */}
-      <View style={styles.glowCircle} />
-
-      {/* 🔥 LOGO */}
+      {/* 🔥 MAIN CONTENT */}
       <Animated.View
         style={[
-          styles.card,
+          styles.centerBox,
           {
-            transform: [
-              { scale: scaleAnim },
-              { translateY },
-              { scale: pulseAnim },
-            ],
+            transform: [{ scale: scaleAnim }, { translateY }],
             opacity: opacityAnim,
           },
         ]}
       >
-        <View style={{ overflow: "hidden" }}>
+        {/* 🔝 LOGO */}
+        <View style={styles.logoWrapper}>
           <Image
-            source={require("../../assets/logo.jpeg")}
+            source={require("../../assets/logo.png")}
             style={styles.logo}
           />
 
@@ -162,59 +89,68 @@ export default function SplashScreen({ navigation }) {
           <Animated.View
             style={[
               styles.shimmer,
-              {
-                transform: [{ translateX: shimmerAnim }],
-              },
+              { transform: [{ translateX: shimmerAnim }] },
             ]}
           />
         </View>
+
+        {/* 🟠 APP NAME */}
+        <Text style={styles.appName}>Enquire</Text>
+
+        {/* 📝 TAGLINE */}
+        <Text style={styles.tagline}>
+          Find Experts • Get Advice • Solve Problems
+        </Text>
       </Animated.View>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#fff", // 🔥 WHITE BACKGROUND
     justifyContent: "center",
     alignItems: "center",
   },
 
-  glowCircle: {
-    position: "absolute",
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: "rgba(255,255,255,0.08)",
+  centerBox: {
+    alignItems: "center",
   },
 
-  card: {
-    alignItems: "center",
-    paddingVertical: 50,
-    paddingHorizontal: 30,
-    borderRadius: 25,
-    backgroundColor: "rgba(255,255,255,0.12)",
+  logoWrapper: {
+    overflow: "hidden",
+    borderRadius: 20,
+    padding: 15,
+    backgroundColor: "#353b48", // light card effect
+    marginBottom: 20,
   },
 
   logo: {
-    width: 260,
-    height: 110,
+    width: 120,
+    height: 120,
     resizeMode: "contain",
   },
 
   shimmer: {
     position: "absolute",
-    width: 80,
+    width: 60,
     height: "100%",
-    backgroundColor: "rgba(255,255,255,0.4)",
-    opacity: 0.4,
+    backgroundColor: "rgba(0,0,0,0.1)", // subtle shimmer for white bg
+    opacity: 0.2,
   },
 
-  particle: {
-    position: "absolute",
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: "#fff",
+  appName: {
+    fontSize: 32,
+    fontWeight: "bold",
+    color: "#FF7A00", // 🔥 ORANGE
+    letterSpacing: 1,
+  },
+
+  tagline: {
+    marginTop: 8,
+    fontSize: 14,
+    color: "#666", // dark text for white bg
+    textAlign: "center",
   },
 });

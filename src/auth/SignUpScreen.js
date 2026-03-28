@@ -5,13 +5,15 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  useColorScheme,
   Alert,
   ActivityIndicator,
+  Image,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
-import LinearGradient from "react-native-linear-gradient";
 import Icon from "react-native-vector-icons/Feather";
-import AsyncStorage from "@react-native-async-storage/async-storage"; // 🔥 TOKEN SAVE
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { signupUser } from "../services/auth";
 
 export default function SignupScreen({ navigation }) {
@@ -24,114 +26,257 @@ export default function SignupScreen({ navigation }) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const isDark = useColorScheme() === "dark";
+  const handleSignup = async () => {
+    if (!name || !email || !password || !confirmPassword) {
+      Alert.alert("Error", "All fields are required");
+      return;
+    }
 
-  const isValidEmail = (email) => /\S+@\S+\.\S+/.test(email);
+    if (password !== confirmPassword) {
+      Alert.alert("Error", "Passwords do not match");
+      return;
+    }
 
- const handleSignup = async () => {
-  if (!name || !email || !password || !confirmPassword) {
-    Alert.alert("Error", "All fields are required");
-    return;
-  }
+    try {
+      setLoading(true);
 
-  try {
-    setLoading(true);
+      const payload = {
+        account: {
+          full_name: name,
+          email,
+          password,
+          password_confirmation: confirmPassword,
+        },
+      };
 
-    const payload = {
-      account: {
-        full_name: name,
-        email,
-        password,
-        password_confirmation: confirmPassword,
-      },
-    };
+      const response = await signupUser(payload);
 
-    console.log("🔥 FINAL PAYLOAD:", JSON.stringify(payload));
+      const token =
+        response?.data?.token ||
+        response?.data?.data?.token;
 
-    const response = await signupUser(payload); // ✅ full payload
+      if (!token) {
+        Alert.alert("Error", "Token not received");
+        setLoading(false);
+        return;
+      }
 
-    console.log("✅ SUCCESS:", response.data);
+      await AsyncStorage.setItem("token", token);
 
-    await AsyncStorage.setItem("token", response.data.token);
+      setLoading(false);
+      Alert.alert("Success ✅", "Account created");
 
-    setLoading(false);
+      navigation.replace("MainApp");
+    } catch (error) {
+      setLoading(false);
+      Alert.alert(
+        "Signup Failed",
+        error?.response?.data?.message || "Something went wrong"
+      );
+    }
+  };
 
-    Alert.alert("Success ✅", "Account created");
-
-    navigation.replace("MainApp");
-
-  } catch (error) {
-    setLoading(false);
-
-    console.log("❌ ERROR:", JSON.stringify(error.response?.data));
-
-    Alert.alert(
-      "Signup Failed",
-      JSON.stringify(error.response?.data) || "Something went wrong"
-    );
-  }
-};
   return (
-    <LinearGradient
-      colors={isDark ? ["#0f2027", "#203a43"] : ["#4facfe", "#00f2fe"]}
-      style={styles.container}
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <View style={styles.card}>
-        <Text style={styles.title}>Create Account 🚀</Text>
-
-        <View style={styles.inputBox}>
-          <Icon name="user" size={18} />
-          <TextInput placeholder="Full Name" style={styles.input} value={name} onChangeText={setName} />
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* 🔝 HEADER */}
+        <View style={styles.header}>
+          <Image
+            source={require("../../assets/logo.png")}
+            style={styles.logo}
+          />
+          <Text style={styles.brand}>Welcome to</Text>
+          <Text style={styles.brand}>Enquire</Text>
         </View>
 
-        <View style={styles.inputBox}>
-          <Icon name="mail" size={18} />
-          <TextInput placeholder="Email" style={styles.input} value={email} onChangeText={setEmail} />
-        </View>
+        {/* 🧾 CARD */}
+        <View style={styles.card}>
+          <Text style={styles.title}>Create your account</Text>
 
-        <View style={styles.inputBox}>
-          <Icon name="lock" size={18} />
-          <TextInput placeholder="Password" secureTextEntry={secure} style={styles.input} value={password} onChangeText={setPassword} />
-          <TouchableOpacity onPress={() => setSecure(!secure)}>
-            <Icon name={secure ? "eye-off" : "eye"} size={18} />
+          {/* NAME */}
+          <View style={styles.inputBox}>
+            <Icon name="user" size={18} color="#666" />
+            <TextInput
+              placeholder="Full Name"
+              style={styles.input}
+              value={name}
+              onChangeText={setName}
+            />
+          </View>
+
+          {/* EMAIL */}
+          <View style={styles.inputBox}>
+            <Icon name="mail" size={18} color="#666" />
+            <TextInput
+              placeholder="Email"
+              style={styles.input}
+              value={email}
+              onChangeText={setEmail}
+            />
+          </View>
+
+          {/* PASSWORD */}
+          <View style={styles.inputBox}>
+            <Icon name="lock" size={18} color="#666" />
+            <TextInput
+              placeholder="Password"
+              secureTextEntry={secure}
+              style={styles.input}
+              value={password}
+              onChangeText={setPassword}
+            />
+            <TouchableOpacity onPress={() => setSecure(!secure)}>
+              <Icon name={secure ? "eye-off" : "eye"} size={18} />
+            </TouchableOpacity>
+          </View>
+
+          {/* CONFIRM PASSWORD */}
+          <View style={styles.inputBox}>
+            <Icon name="lock" size={18} color="#666" />
+            <TextInput
+              placeholder="Confirm Password"
+              secureTextEntry={confirmSecure}
+              style={styles.input}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+            />
+            <TouchableOpacity onPress={() => setConfirmSecure(!confirmSecure)}>
+              <Icon name={confirmSecure ? "eye-off" : "eye"} size={18} />
+            </TouchableOpacity>
+          </View>
+
+          {/* TERMS */}
+          <Text style={styles.termsText}>
+            By continuing, I agree to the{" "}
+            <Text style={styles.highlight}>Terms</Text> &{" "}
+            <Text style={styles.highlight}>Privacy Policy</Text>
+          </Text>
+
+          {/* BUTTON */}
+          <TouchableOpacity
+            style={styles.button}
+            onPress={handleSignup}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Sign Up</Text>
+            )}
+          </TouchableOpacity>
+
+          {/* LOGIN */}
+          <TouchableOpacity onPress={() => navigation.navigate("EmailLogin")}>
+            <Text style={styles.link}>
+              Already have an account? Login
+            </Text>
           </TouchableOpacity>
         </View>
-
-        <View style={styles.inputBox}>
-          <Icon name="lock" size={18} />
-          <TextInput placeholder="Confirm Password" secureTextEntry={confirmSecure} style={styles.input} value={confirmPassword} onChangeText={setConfirmPassword} />
-          <TouchableOpacity onPress={() => setConfirmSecure(!confirmSecure)}>
-            <Icon name={confirmSecure ? "eye-off" : "eye"} size={18} />
-          </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity style={styles.button} onPress={handleSignup} disabled={loading}>
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Sign Up</Text>}
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => navigation.navigate("EmailLogin")}>
-          <Text style={styles.link}>Already have an account? Login</Text>
-        </TouchableOpacity>
-      </View>
-    </LinearGradient>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center" },
-  card: { margin: 20, backgroundColor: "#fff", padding: 25, borderRadius: 20, elevation: 8 },
-  title: { fontSize: 24, fontWeight: "700", marginBottom: 20, textAlign: "center" },
+  container: {
+    flexGrow: 1,
+    backgroundColor: "#fff",
+    paddingBottom: 30,
+  },
+
+  header: {
+    alignItems: "center",
+    marginTop: 70,
+    marginBottom: 20,
+  },
+
+  logo: {
+    width: 90,
+    height: 90,
+    marginBottom: 10,
+    resizeMode: "contain",
+  },
+
+  brand: {
+    fontSize: 26,
+    fontWeight: "700",
+    color: "#1e293b",
+  },
+
+  card: {
+    backgroundColor: "#fff",
+    marginHorizontal: 20,
+    borderRadius: 25,
+    padding: 22,
+
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 6,
+  },
+
+  title: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 18,
+    color: "#334155",
+  },
+
   inputBox: {
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#ddd",
+    backgroundColor: "#f8fafc",
     borderRadius: 12,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     marginBottom: 15,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
-  input: { flex: 1, padding: 12 },
-  button: { backgroundColor: "#4facfe", padding: 15, borderRadius: 12, alignItems: "center" },
-  buttonText: { color: "#fff", fontWeight: "bold" },
-  link: { marginTop: 15, textAlign: "center", color: "#4facfe" },
+
+  input: {
+    flex: 1,
+    padding: 14,
+    fontSize: 15,
+    color: "#0f172a",
+  },
+
+  button: {
+    backgroundColor: "#e67e22",
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: 10,
+  },
+
+  buttonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+
+  link: {
+    textAlign: "center",
+    marginTop: 18,
+    color: "#2563eb",
+    fontWeight: "600",
+  },
+
+  termsText: {
+    fontSize: 12,
+    color: "#94a3b8",
+    textAlign: "center",
+    marginVertical: 10,
+  },
+
+  highlight: {
+    color: "#2563eb",
+    fontWeight: "600",
+  },
 });

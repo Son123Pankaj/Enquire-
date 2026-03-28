@@ -1,188 +1,180 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  ActivityIndicator,
   TouchableOpacity,
-  Alert,
-  useColorScheme,
-  ScrollView,
-  RefreshControl,
+  Modal,
+  FlatList,
+  ActivityIndicator,
 } from "react-native";
-import LinearGradient from "react-native-linear-gradient";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import Icon from "react-native-vector-icons/Feather";
-import { getProfile } from "../services/auth";
+import { getProfile } from "../services/profile";
 
-export default function ProfileScreen({ navigation }) {
+const menuItems = [
+  { name: "Share Profile", icon: "share-2", screen: "ShareProfile" },
+  { name: "Profile QR Code", icon: "grid", screen: "ProfileQR" },
+  { name: "Personal Info", icon: "user", screen: "PersonalInfo" },
+  { name: "Business Details", icon: "briefcase", screen: "BusinessDetails" },
+  { name: "Category", icon: "layers", screen: "Category" },
+  { name: "Schedule", icon: "calendar", screen: "Schedule" },
+  { name: "Call Rates", icon: "phone", screen: "CallRates" },
+  { name: "Approval", icon: "check-circle", screen: "Approval" },
+  { name: "Verification Badge", icon: "award", screen: "Verification" },
+  { name: "Favorite", icon: "heart", screen: "Favorite" },
+  { name: "About App", icon: "info", screen: "About" },
+  { name: "Account Privacy", icon: "lock", screen: "Privacy" },
+  { name: "Support", icon: "help-circle", screen: "Support" },
+  { name: "Logout", icon: "log-out", screen: "Logout" },
+];
+
+const ProfileScreen = ({ navigation }) => {
+  const [menuVisible, setMenuVisible] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const isDark = useColorScheme() === "dark";
-
-  // 🔥 FETCH PROFILE
-  const fetchProfile = async () => {
-    try {
-      const res = await getProfile();
-
-      console.log("PROFILE DATA:", res.data);
-
-      setUser(res.data.account); // ⚠️ response structure
-    } catch (error) {
-      console.log("PROFILE ERROR:", error?.response?.data);
-
-      Alert.alert(
-        "Error",
-        error?.response?.data?.message || "Failed to load profile"
-      );
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
 
   useEffect(() => {
     fetchProfile();
   }, []);
 
-  // 🔄 Pull to refresh
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchProfile();
+  const fetchProfile = async () => {
+    try {
+      const res = await getProfile();
+      console.log("Profile Data:", res.data);
+      setUser(res.data);
+    } catch (error) {
+      console.log("Profile Error:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // 🚪 LOGOUT
-  const handleLogout = async () => {
-    Alert.alert("Logout", "Are you sure?", [
-      { text: "Cancel" },
-      {
-        text: "Logout",
-        onPress: async () => {
-          await AsyncStorage.removeItem("token");
-          navigation.replace("EmailLogin");
-        },
-      },
-    ]);
+  const handleNavigate = (screen) => {
+    setMenuVisible(false);
+    navigation.navigate(screen);
   };
-
-  if (loading) {
-    return (
-      <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#4facfe" />
-      </View>
-    );
-  }
 
   return (
-    <LinearGradient
-      colors={isDark ? ["#0f2027", "#203a43"] : ["#4facfe", "#00f2fe"]}
-      style={{ flex: 1 }}
-    >
-      <ScrollView
-        contentContainerStyle={styles.container}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        {/* 👤 PROFILE CARD */}
-        <View style={styles.card}>
-          <Icon name="user" size={60} color="#4facfe" />
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={{ width: 24 }} />
 
-          <Text style={styles.name}>
-            {user?.full_name || "No Name"}
-          </Text>
+        {/* Center Profile */}
+        <View style={styles.centerProfile}>
+          <View style={styles.iconCircle}>
+            <Icon name="user" size={40} color="#fff" />
+          </View>
 
-          <Text style={styles.email}>
-            {user?.email || "No Email"}
-          </Text>
+          {/* Dynamic Name */}
+          {loading ? (
+            <ActivityIndicator size="small" color="#000" />
+          ) : (
+            <Text style={styles.name}>
+              {user
+                ? user.full_name ||
+                  `${user.first_name || ""} ${user.last_name || ""}`
+                : "No Name"}
+            </Text>
+          )}
         </View>
 
-        {/* 📋 INFO */}
-        <View style={styles.infoBox}>
-          <Text style={styles.label}>City</Text>
-          <Text style={styles.value}>{user?.city || "-"}</Text>
-
-          <Text style={styles.label}>State</Text>
-          <Text style={styles.value}>{user?.state || "-"}</Text>
-
-          <Text style={styles.label}>Phone</Text>
-          <Text style={styles.value}>{user?.phone || "-"}</Text>
-        </View>
-
-        {/* 🚪 LOGOUT */}
-        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-          <Text style={styles.logoutText}>Logout</Text>
+        {/* 3 dots */}
+        <TouchableOpacity onPress={() => setMenuVisible(true)}>
+          <Icon name="more-vertical" size={24} color="#000" />
         </TouchableOpacity>
-      </ScrollView>
-    </LinearGradient>
+      </View>
+
+      {/* Bottom Sheet */}
+      <Modal transparent visible={menuVisible} animationType="slide">
+        <View style={styles.overlay}>
+          <View style={styles.bottomSheet}>
+            <FlatList
+              data={menuItems}
+              keyExtractor={(item, index) => index.toString()}
+              showsVerticalScrollIndicator={false}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  activeOpacity={0.7}
+                  onPress={() => handleNavigate(item.screen)}
+                >
+                  <View style={styles.menuRow}>
+                    <Icon name={item.icon} size={20} color="#333" />
+                    <Text style={styles.menuText}>{item.name}</Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
-}
+};
+
+export default ProfileScreen;
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-    alignItems: "center",
+    flex: 1,
+    backgroundColor: "#f5f5f5",
   },
 
-  loader: {
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+  },
+
+  centerProfile: {
+    alignItems: "center",
     flex: 1,
+  },
+
+  iconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "#1E5BFF",
     justifyContent: "center",
     alignItems: "center",
   },
 
-  card: {
-    backgroundColor: "#fff",
-    width: "100%",
-    borderRadius: 20,
-    padding: 25,
-    alignItems: "center",
-    elevation: 5,
-    marginBottom: 20,
-  },
-
   name: {
-    fontSize: 22,
+    marginTop: 10,
+    fontSize: 18,
     fontWeight: "bold",
-    marginTop: 10,
   },
 
-  email: {
-    color: "#666",
-    marginTop: 5,
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.3)",
+    justifyContent: "flex-end",
   },
 
-  infoBox: {
+  bottomSheet: {
     backgroundColor: "#fff",
-    width: "100%",
-    borderRadius: 20,
-    padding: 20,
-    elevation: 5,
-  },
-
-  label: {
-    fontSize: 14,
-    color: "#999",
-    marginTop: 10,
-  },
-
-  value: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-
-  logoutBtn: {
-    marginTop: 30,
-    backgroundColor: "#ff4d4d",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     padding: 15,
-    borderRadius: 12,
-    width: "100%",
+    maxHeight: "80%",
+  },
+
+  menuItem: {
+    paddingVertical: 15,
+    borderBottomWidth: 0.5,
+    borderColor: "#ddd",
+  },
+
+  menuRow: {
+    flexDirection: "row",
     alignItems: "center",
   },
 
-  logoutText: {
-    color: "#fff",
-    fontWeight: "bold",
+  menuText: {
+    fontSize: 16,
+    marginLeft: 12,
   },
 });
