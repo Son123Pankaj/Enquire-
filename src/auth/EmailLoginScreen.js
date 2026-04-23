@@ -65,7 +65,7 @@ export default function LoginScreen({ navigation }) {
           style={styles.logo}
         />
 
-        <Text style={styles.brand}>Welcome to</Text>
+        <Text style={styles.brand}>Welcome to</Text> 
         <Text style={styles.brand}>Enquire</Text>
       </View>
 
