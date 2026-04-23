@@ -5,12 +5,12 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  Alert,
   SafeAreaView,
   ActivityIndicator,
   useColorScheme,
 } from "react-native";
 import LinearGradient from "react-native-linear-gradient";
+import { showToast } from "../utils/toast";
 
 export default function LoginScreen({ navigation }) {
   const [phone, setPhone] = useState("");
@@ -23,7 +23,7 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = () => {
     if (phone.length !== 10) {
-      Alert.alert("Error", "Enter valid mobile number");
+      showToast("Enter valid mobile number");
       return;
     }
 
@@ -32,7 +32,7 @@ export default function LoginScreen({ navigation }) {
     setTimeout(() => {
       const generatedOtp = Math.floor(1000 + Math.random() * 9000);
 
-      Alert.alert("Your OTP", `${generatedOtp}`);
+      showToast(`Your OTP is ${generatedOtp}`);
 
       setLoading(false);
 
@@ -60,7 +60,7 @@ export default function LoginScreen({ navigation }) {
 
           <Text style={styles.title}>
             Welcome to{" "}
-            <Text style={styles.highlight}>EnQuire</Text>
+            <Text style={styles.highlight}>PreviewTax</Text>
           </Text>
 
           <Text style={styles.subtitle}>

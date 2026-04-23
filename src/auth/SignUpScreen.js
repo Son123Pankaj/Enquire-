@@ -5,7 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ActivityIndicator,
   Image,
   ScrollView,
@@ -14,7 +13,12 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { signupUser } from "../services/auth";
+import {
+  signupUser,
+  extractAuthToken,
+  extractIsBusiness,
+} from "../services/auth";
+import { showToast } from "../utils/toast";
 
 export default function SignupScreen({ navigation }) {
   const [secure, setSecure] = useState(true);
@@ -28,12 +32,12 @@ export default function SignupScreen({ navigation }) {
 
   const handleSignup = async () => {
     if (!name || !email || !password || !confirmPassword) {
-      Alert.alert("Error", "All fields are required");
+      showToast("All fields are required");
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert("Error", "Passwords do not match");
+      showToast("Passwords do not match");
       return;
     }
 
@@ -50,29 +54,27 @@ export default function SignupScreen({ navigation }) {
       };
 
       const response = await signupUser(payload);
-
-      const token =
-        response?.data?.token ||
-        response?.data?.data?.token;
+      const token = extractAuthToken(response);
 
       if (!token) {
-        Alert.alert("Error", "Token not received");
+        showToast("Token not received");
         setLoading(false);
         return;
       }
 
+      const isBusiness = extractIsBusiness(response);
+
       await AsyncStorage.setItem("token", token);
+      if (typeof isBusiness === "boolean") {
+        await AsyncStorage.setItem("is_business", JSON.stringify(isBusiness));
+      }
 
       setLoading(false);
-      Alert.alert("Success ✅", "Account created");
-
+      showToast("Account created");
       navigation.replace("MainApp");
     } catch (error) {
       setLoading(false);
-      Alert.alert(
-        "Signup Failed",
-        error?.response?.data?.message || "Something went wrong"
-      );
+      showToast(error?.response?.data?.message || "Signup failed");
     }
   };
 
@@ -85,21 +87,17 @@ export default function SignupScreen({ navigation }) {
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >
-        {/* 🔝 HEADER */}
         <View style={styles.header}>
           <Image
-            source={require("../../assets/logo.png")}
+            source={require("../../assets/logo-1.webp")}
             style={styles.logo}
           />
-          <Text style={styles.brand}>Welcome to</Text>
-          <Text style={styles.brand}>Enquire</Text>
+          <Text style={styles.brand}>Welcome to PreviewTax</Text>
         </View>
 
-        {/* 🧾 CARD */}
         <View style={styles.card}>
           <Text style={styles.title}>Create your account</Text>
 
-          {/* NAME */}
           <View style={styles.inputBox}>
             <Icon name="user" size={18} color="#666" />
             <TextInput
@@ -110,7 +108,6 @@ export default function SignupScreen({ navigation }) {
             />
           </View>
 
-          {/* EMAIL */}
           <View style={styles.inputBox}>
             <Icon name="mail" size={18} color="#666" />
             <TextInput
@@ -121,7 +118,6 @@ export default function SignupScreen({ navigation }) {
             />
           </View>
 
-          {/* PASSWORD */}
           <View style={styles.inputBox}>
             <Icon name="lock" size={18} color="#666" />
             <TextInput
@@ -136,7 +132,6 @@ export default function SignupScreen({ navigation }) {
             </TouchableOpacity>
           </View>
 
-          {/* CONFIRM PASSWORD */}
           <View style={styles.inputBox}>
             <Icon name="lock" size={18} color="#666" />
             <TextInput
@@ -151,14 +146,11 @@ export default function SignupScreen({ navigation }) {
             </TouchableOpacity>
           </View>
 
-          {/* TERMS */}
           <Text style={styles.termsText}>
-            By continuing, I agree to the{" "}
-            <Text style={styles.highlight}>Terms</Text> &{" "}
-            <Text style={styles.highlight}>Privacy Policy</Text>
+            By continuing, I agree to the <Text style={styles.highlight}>Terms</Text>
+            {" "} & <Text style={styles.highlight}>Privacy Policy</Text>
           </Text>
 
-          {/* BUTTON */}
           <TouchableOpacity
             style={styles.button}
             onPress={handleSignup}
@@ -171,10 +163,9 @@ export default function SignupScreen({ navigation }) {
             )}
           </TouchableOpacity>
 
-          {/* LOGIN */}
           <TouchableOpacity onPress={() => navigation.navigate("EmailLogin")}>
-            <Text style={styles.link}>
-              Already have an account? Login
+            <Text style={styles.termsText}>
+              Already have an account? <Text style={styles.highlight}>LogIn</Text>
             </Text>
           </TouchableOpacity>
         </View>
@@ -192,14 +183,13 @@ const styles = StyleSheet.create({
 
   header: {
     alignItems: "center",
-    marginTop: 70,
+    marginTop: 40,
     marginBottom: 20,
   },
 
   logo: {
-    width: 90,
-    height: 90,
-    marginBottom: 10,
+    width: 120,
+    height: 120,
     resizeMode: "contain",
   },
 
@@ -212,21 +202,14 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: "#fff",
     marginHorizontal: 20,
-    borderRadius: 25,
-    padding: 22,
-
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 6,
   },
 
   title: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 18,
-    color: "#334155",
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#0f172a",
+    marginBottom: 20,
+    textAlign: "center",
   },
 
   inputBox: {
@@ -247,36 +230,34 @@ const styles = StyleSheet.create({
     color: "#0f172a",
   },
 
+  termsText: {
+    fontSize: 12,
+    color: "#64748b",
+    textAlign: "center",
+    marginTop: 8,
+  },
+
+  highlight: {
+    color: "#e67e22",
+    fontWeight: "600",
+  },
+
   button: {
     backgroundColor: "#e67e22",
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: "center",
-    marginTop: 10,
+    marginTop: 15,
+    shadowColor: "#e67e22",
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
   },
 
   buttonText: {
     color: "#fff",
     fontWeight: "600",
     fontSize: 16,
-  },
-
-  link: {
-    textAlign: "center",
-    marginTop: 18,
-    color: "#2563eb",
-    fontWeight: "600",
-  },
-
-  termsText: {
-    fontSize: 12,
-    color: "#94a3b8",
-    textAlign: "center",
-    marginVertical: 10,
-  },
-
-  highlight: {
-    color: "#2563eb",
-    fontWeight: "600",
   },
 });

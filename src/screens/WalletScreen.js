@@ -1,18 +1,52 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
+  ActivityIndicator,
   FlatList,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
+import { useNavigation } from "@react-navigation/native";
+import { fetchWalletTransactions } from "../services/payments";
+import { getWithdrawalRequests } from "../services/earnings";
+import { showToast } from "../utils/toast";
 
 export default function WalletScreen() {
+  const navigation = useNavigation();
   const [selectedTab, setSelectedTab] = useState("All");
+  const [walletBalanceCents, setWalletBalanceCents] = useState(0);
+  const [earningsBalanceCents, setEarningsBalanceCents] = useState(0);
+  const [transactions, setTransactions] = useState([]);
+  const [withdrawalRequests, setWithdrawalRequests] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const transactions = []; // empty for now
+  useEffect(() => {
+    loadWallet();
+  }, []);
+
+  const loadWallet = async () => {
+    setLoading(true);
+    try {
+      const [walletResponse, earningsResponse] = await Promise.all([
+        fetchWalletTransactions(),
+        getWithdrawalRequests(),
+      ]);
+
+      setWalletBalanceCents(walletResponse.walletBalanceCents);
+      setTransactions(walletResponse.walletTransactions || []);
+      setEarningsBalanceCents(earningsResponse.earningsBalanceCents ?? 0);
+      setWithdrawalRequests(earningsResponse.withdrawalRequests || []);
+    } catch (error) {
+      showToast("Unable to load wallet details");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddMoney = () => navigation.navigate("WalletTopup");
 
   return (
     <SafeAreaView style={styles.container}>
@@ -20,9 +54,9 @@ export default function WalletScreen() {
         <Text style={styles.label}>Total balance</Text>
 
         <View style={styles.balanceRow}>
-          <Text style={styles.balance}>₹0.0</Text>
+          <Text style={styles.balance}>₹{(walletBalanceCents / 100).toFixed(2)}</Text>
 
-          <TouchableOpacity style={styles.addBtn}>
+          <TouchableOpacity style={styles.addBtn} onPress={handleAddMoney}>
             <Text style={styles.addBtnText}>+ Add Money</Text>
           </TouchableOpacity>
         </View>
@@ -30,7 +64,7 @@ export default function WalletScreen() {
         <View style={styles.walletRow}>
           <View style={styles.walletBox}>
             <Text style={styles.walletTitle}>Cash Wallet</Text>
-            <Text style={styles.walletAmount}>₹0.0</Text>
+            <Text style={styles.walletAmount}>₹{(walletBalanceCents / 100).toFixed(2)}</Text>
             <Text style={styles.walletSub}>Used for calls</Text>
           </View>
 
@@ -40,7 +74,7 @@ export default function WalletScreen() {
 
           <View style={styles.walletBox}>
             <Text style={styles.walletTitle}>Earnings Wallet</Text>
-            <Text style={styles.walletAmount}>₹0.0</Text>
+            <Text style={styles.walletAmount}>₹{(earningsBalanceCents / 100).toFixed(2)}</Text>
             <Text style={styles.walletSub}>Withdraw / Transfer</Text>
           </View>
         </View>
@@ -73,20 +107,65 @@ export default function WalletScreen() {
         </View>
       </View>
 
-      {/* Empty State */}
-      {transactions.length === 0 && (
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#111827" />
+        </View>
+      ) : transactions.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>No transactions found</Text>
         </View>
+      ) : (
+        <FlatList
+          contentContainerStyle={styles.listContent}
+          data={transactions.filter((item) => {
+            if (selectedTab === "All") return true;
+            return item.entry_type?.toLowerCase().includes(selectedTab.toLowerCase());
+          })}
+          keyExtractor={(item) => String(item.id)}
+          renderItem={({ item }) => (
+            <View style={styles.transactionCard}>
+              <View style={styles.transactionRow}>
+                <Text style={styles.transactionTitle}>{item.description}</Text>
+                <Text style={styles.transactionAmount}>
+                  {item.transaction_type === "credit" ? "+" : "-"}
+                  ₹{((item.amount_cents ?? 0) / 100).toFixed(2)}
+                </Text>
+              </View>
+              <Text style={styles.transactionMeta}>{item.created_at}</Text>
+            </View>
+          )}
+        />
       )}
 
-      {/* Bottom Navigation (UI only) */}
-      {/* <View style={styles.bottomNav}>
-        <Icon name="home" size={22} />
-        <Icon name="clock" size={22} />
-        <Icon name="credit-card" size={22} />
-        <Icon name="user" size={22} />
-      </View> */}
+      {!loading && (
+        <View style={styles.withdrawalSection}>
+          <Text style={styles.sectionTitle}>Withdrawal Requests</Text>
+          {withdrawalRequests.length === 0 ? (
+            <View style={styles.emptyWithdrawal}>
+              <Text style={styles.emptyText}>No withdrawal requests yet</Text>
+            </View>
+          ) : (
+            <FlatList
+              contentContainerStyle={styles.listContent}
+              data={withdrawalRequests}
+              keyExtractor={(item) => String(item.id)}
+              renderItem={({ item }) => (
+                <View style={styles.withdrawalCard}>
+                  <View style={styles.transactionRow}>
+                    <Text style={styles.transactionTitle}>₹{((item.amount_cents || 0) / 100).toFixed(2)}</Text>
+                    <View style={[styles.statusBadge, { backgroundColor: item.status === "pending" ? "#f59e0b" : item.status === "approved" ? "#10b981" : item.status === "rejected" ? "#ef4444" : "#3b82f6" }]}> 
+                      <Text style={styles.statusBadgeText}>{item.status?.toUpperCase()}</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.transactionMeta}>{item.upi_id || "UPI not available"}</Text>
+                  <Text style={styles.transactionMeta}>{new Date(item.created_at).toLocaleDateString()}</Text>
+                </View>
+              )}
+            />
+          )}
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -194,6 +273,72 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     color: "#888",
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  listContent: {
+    padding: 16,
+  },
+  withdrawalSection: {
+    marginTop: 16,
+    marginHorizontal: 16,
+  },
+  withdrawalCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    elevation: 2,
+  },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    justifyContent: "center",
+  },
+  statusBadgeText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  emptyWithdrawal: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 12,
+  },
+  transactionCard: {
+    backgroundColor: "#fff",
+    marginBottom: 12,
+    borderRadius: 16,
+    padding: 16,
+    elevation: 2,
+  },
+  transactionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  transactionTitle: {
+    fontSize: 14,
+    color: "#111827",
+    fontWeight: "600",
+    flex: 1,
+  },
+  transactionAmount: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#111827",
+  },
+  transactionMeta: {
+    marginTop: 8,
+    color: "#6b7280",
+    fontSize: 12,
   },
   bottomNav: {
     flexDirection: "row",

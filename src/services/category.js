@@ -4,9 +4,14 @@ export const getCategories = async (query = "") => {
   try {
     const url = query ? `categories/?q=${query}` : "categories";
     const response = await Api.get(url);
-    return response.data.categories; // ✅ Corrected
+    return Array.isArray(response.data?.categories)
+      ? response.data.categories
+      : [];
   } catch (error) {
-    console.log("Error fetching categories:", error);
+    if (error.response?.status === 404) {
+      return [];
+    }
+
     throw error;
   }
 };

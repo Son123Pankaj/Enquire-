@@ -5,13 +5,18 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ActivityIndicator,
   Image,
 } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { loginUser } from "../services/auth";
+import {
+  loginUser,
+  extractAuthToken,
+  extractIsBusiness,
+  fetchCurrentUserProfile,
+} from "../services/auth";
+import { showToast } from "../utils/toast";
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
@@ -19,9 +24,19 @@ export default function LoginScreen({ navigation }) {
   const [secure, setSecure] = useState(true);
   const [loading, setLoading] = useState(false);
 
+  const resolveBusinessFlag = async (loginResponse) => {
+    const loginFlag = extractIsBusiness(loginResponse);
+    if (typeof loginFlag === "boolean") {
+      return loginFlag;
+    }
+
+    const profile = await fetchCurrentUserProfile();
+    return extractIsBusiness(profile) ?? false;
+  };
+
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert("Error", "Please fill all fields");
+      showToast("Please fill all fields");
       return;
     }
 
@@ -32,50 +47,41 @@ export default function LoginScreen({ navigation }) {
         account: { email, password },
       });
 
-      const token =
-        response?.data?.token ||
-        response?.data?.data?.token ||
-        response?.data?.access_token;
+      const token = extractAuthToken(response);
 
       if (!token) {
-        Alert.alert("Error", "Token not received");
+        showToast("Token not received");
         setLoading(false);
         return;
       }
 
       await AsyncStorage.setItem("token", token);
 
+      const isBusiness = await resolveBusinessFlag(response);
+      await AsyncStorage.setItem("is_business", JSON.stringify(isBusiness));
+
       setLoading(false);
-      navigation.replace("MainApp");
+      navigation.replace(isBusiness ? "Home" : "MainApp");
     } catch (error) {
       setLoading(false);
-      Alert.alert(
-        "Login Failed",
-        error?.response?.data?.message || "Something went wrong"
-      );
+      showToast(error?.response?.data?.message || "Login failed");
     }
   };
 
   return (
     <View style={styles.container}>
-      {/* 🔝 HEADER */}
       <View style={styles.header}>
         <Image
-          source={require("../../assets/logo.png")} 
+          source={require("../../assets/logo-1.webp")}
           style={styles.logo}
         />
 
-        <Text style={styles.brand}>Welcome to</Text>
-        <Text style={styles.brand}>Enquire</Text>
+        <Text style={styles.brand}>Welcome to PreviewTax</Text>
       </View>
 
-      {/* 🔐 LOGIN CARD */}
       <View style={styles.card}>
-        <Text style={styles.loginTitle}>
-          Enter your email and password
-        </Text>
+        <Text style={styles.loginTitle}>Enter your email and password</Text>
 
-        {/* EMAIL */}
         <View style={styles.inputBox}>
           <Icon name="mail" size={18} color="#666" />
           <TextInput
@@ -83,10 +89,10 @@ export default function LoginScreen({ navigation }) {
             style={styles.input}
             value={email}
             onChangeText={setEmail}
+            keyboardType= "email-address"
           />
         </View>
 
-        {/* PASSWORD */}
         <View style={styles.inputBox}>
           <Icon name="lock" size={18} color="#666" />
           <TextInput
@@ -101,13 +107,11 @@ export default function LoginScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* TERMS */}
         <Text style={styles.termsText}>
-          By continuing, I accept the{" "}
-          <Text style={styles.highlight}>Terms of Service</Text>
+          By continuing, I agree to the <Text style={styles.highlight}>Terms</Text>
+          {" "} & <Text style={styles.highlight}>Privacy Policy</Text>
         </Text>
 
-        {/* LOGIN BUTTON */}
         <TouchableOpacity
           style={styles.button}
           onPress={handleLogin}
@@ -120,17 +124,16 @@ export default function LoginScreen({ navigation }) {
           )}
         </TouchableOpacity>
 
-        {/* 🔥 BOTTOM LINKS */}
         <View style={styles.bottomRow}>
           <TouchableOpacity
             onPress={() => navigation.navigate("ForgotPassword")}
           >
-            <Text style={styles.bottomText}>Forgot Password</Text>
+            <Text style={styles.highlight}>Forgot Password</Text>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => navigation.navigate("Signup")}>
             <Text style={styles.bottomText}>
-              New User? <Text style={styles.highlight}>Create</Text>
+              New User? <Text style={styles.highlight}>Create Account</Text>
             </Text>
           </TouchableOpacity>
         </View>
@@ -152,9 +155,9 @@ const styles = StyleSheet.create({
   },
 
   logo: {
-    width: 80,
-    height: 80,
-    marginBottom: 12,
+    width: 120,
+    height: 120,
+    marginBottom: 0,
     resizeMode: "contain",
   },
 
@@ -167,14 +170,6 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: "#fff",
     marginHorizontal: 20,
-    borderRadius: 25,
-    padding: 22,
-
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 6,
   },
 
   loginTitle: {
@@ -209,8 +204,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     marginTop: 15,
-    marginBottom: 10, // 🔥 spacing fix
-
+    marginBottom: 10,
     shadowColor: "#e67e22",
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -226,25 +220,24 @@ const styles = StyleSheet.create({
 
   termsText: {
     fontSize: 12,
-    color: "#94a3b8",
+    color: "#64748b",
     textAlign: "center",
-    marginVertical: 10,
+    marginTop: 8,
   },
 
   highlight: {
-    color: "#2563eb",
+    color: "#e67e22",
     fontWeight: "600",
   },
 
   bottomRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 10,
+    marginTop: 12,
   },
 
   bottomText: {
-    color: "#2563eb",
-    fontSize: 14,
-    fontWeight: "500",
+    color: "#475569",
+    fontSize: 13,
   },
 });

@@ -1,20 +1,18 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  Alert,
   Animated,
 } from "react-native";
 import OTPTextInput from "react-native-otp-textinput";
- import Home from   "../screens/HomeScreen"
+import { showToast } from "../utils/toast";
+
 export default function OTPScreen({ route, navigation }) {
   const { phone, otp: initialOtp } = route.params;
-
   const [enteredOtp, setEnteredOtp] = useState("");
   const [otp, setOtp] = useState(initialOtp);
-
   const scaleAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -22,21 +20,22 @@ export default function OTPScreen({ route, navigation }) {
       toValue: 1,
       useNativeDriver: true,
     }).start();
-  }, []);
+  }, [scaleAnim]);
 
   const resendOtp = () => {
     const newOtp = Math.floor(1000 + Math.random() * 9000);
     setOtp(newOtp);
-    Alert.alert("New OTP", newOtp.toString());
+    showToast(`New OTP is ${newOtp}`);
   };
 
- const verifyOtp = () => {
-  if (enteredOtp == otp) {
-    navigation.replace("MainApp"); // ✅ FINAL FIX
-  } else {
-    Alert.alert("Invalid OTP ❌");
-  }
-};
+  const verifyOtp = () => {
+    if (enteredOtp === String(otp)) {
+      navigation.replace("Home");
+      return;
+    }
+
+    showToast("Invalid OTP");
+  };
 
   return (
     <View style={styles.container}>

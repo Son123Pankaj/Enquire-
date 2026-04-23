@@ -73,3 +73,13 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+.gradle-user-home*
+Libraries/
+React/
+ReactAndroid/
+ReactCommon/
+sdks/
+third-party-podspecs/
+android/*.log
+android/hs_err_pid*
+android/replay_pid*

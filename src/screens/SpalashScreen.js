@@ -9,6 +9,7 @@ import {
   Easing,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { extractIsBusiness, fetchCurrentUserProfile } from "../services/auth";
 
 const { width, height } = Dimensions.get("window");
 
@@ -16,11 +17,9 @@ export default function SplashScreen({ navigation }) {
   const scaleAnim = useRef(new Animated.Value(0.7)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(40)).current;
-
   const shimmerAnim = useRef(new Animated.Value(-200)).current;
 
   useEffect(() => {
-    // ENTRY ANIMATION
     Animated.parallel([
       Animated.spring(scaleAnim, {
         toValue: 1,
@@ -39,7 +38,6 @@ export default function SplashScreen({ navigation }) {
       }),
     ]).start();
 
-    // SHIMMER
     Animated.loop(
       Animated.timing(shimmerAnim, {
         toValue: 300,
@@ -49,26 +47,52 @@ export default function SplashScreen({ navigation }) {
       })
     ).start();
 
-    // NAVIGATION
     const checkLogin = async () => {
       const token = await AsyncStorage.getItem("token");
 
-      setTimeout(() => {
-        if (token) {
-          navigation.replace("MainApp");
-        } else {
+      if (!token) {
+        setTimeout(() => {
           navigation.replace("EmailLogin");
+        }, 3000);
+        return;
+      }
+
+      let isBusiness = null;
+      const storedFlag = await AsyncStorage.getItem("is_business");
+
+      if (storedFlag !== null) {
+        try {
+          isBusiness = JSON.parse(storedFlag);
+        } catch (error) {
+          isBusiness = storedFlag === "true";
         }
+      }
+
+      if (typeof isBusiness !== "boolean") {
+        try {
+          const profile = await fetchCurrentUserProfile();
+          isBusiness = extractIsBusiness(profile);
+          if (typeof isBusiness === "boolean") {
+            await AsyncStorage.setItem(
+              "is_business",
+              JSON.stringify(isBusiness)
+            );
+          }
+        } catch (error) {
+          isBusiness = false;
+        }
+      }
+
+      setTimeout(() => {
+        navigation.replace(isBusiness ? "Home" : "MainApp");
       }, 3000);
     };
 
     checkLogin();
-  }, []);
+  }, [navigation, opacityAnim, scaleAnim, shimmerAnim, translateY]);
 
   return (
     <View style={styles.container}>
-
-      {/* 🔥 MAIN CONTENT */}
       <Animated.View
         style={[
           styles.centerBox,
@@ -78,29 +102,26 @@ export default function SplashScreen({ navigation }) {
           },
         ]}
       >
-        {/* 🔝 LOGO */}
-        <View style={styles.logoWrapper}>
+        <View>
           <Image
-            source={require("../../assets/logo.png")}
+            source={require("../../assets/preview-tax-logo-cropped.png")}
             style={styles.logo}
           />
 
-          {/* ✨ SHIMMER */}
           <Animated.View
             style={[
-              styles.shimmer,
               { transform: [{ translateX: shimmerAnim }] },
             ]}
           />
         </View>
 
-        {/* 🟠 APP NAME */}
-        <Text style={styles.appName}>Enquire</Text>
+        {/* <Text style={styles.appName}>Preview Tax</Text> */}
 
-        {/* 📝 TAGLINE */}
+        <Text style={styles.taglineMain}>Tax Means Preview Tax</Text>
         <Text style={styles.tagline}>
           Find Experts • Get Advice • Solve Problems
         </Text>
+
       </Animated.View>
     </View>
   );
@@ -109,7 +130,9 @@ export default function SplashScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff", // 🔥 WHITE BACKGROUND
+    width,
+    height,
+    backgroundColor: "#fff",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -118,39 +141,32 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  logoWrapper: {
-    overflow: "hidden",
-    borderRadius: 20,
-    padding: 15,
-    backgroundColor: "#353b48", // light card effect
-    marginBottom: 20,
-  },
-
   logo: {
-    width: 120,
-    height: 120,
+    width: 260,
+    height: 72,
     resizeMode: "contain",
+    marginBottom: 10,
   },
 
-  shimmer: {
-    position: "absolute",
-    width: 60,
-    height: "100%",
-    backgroundColor: "rgba(0,0,0,0.1)", // subtle shimmer for white bg
-    opacity: 0.2,
-  },
-
-  appName: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#FF7A00", // 🔥 ORANGE
-    letterSpacing: 1,
-  },
+  // appName: {
+  //   fontSize: 32,
+  //   fontWeight: "bold",
+  //   color: "#FF7A00",
+  //   letterSpacing: 1,
+  // },
 
   tagline: {
     marginTop: 8,
     fontSize: 14,
-    color: "#666", // dark text for white bg
+    color: "#666",
+    textAlign: "center",
+  },
+
+  taglineMain: {
+    marginTop: 4,
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#333",
     textAlign: "center",
   },
 });
