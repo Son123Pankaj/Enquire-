@@ -280,8 +280,8 @@ const PersonalInfo = ({ navigation }) => {
     } catch (error) {
       showToast(
         error?.response?.data?.errors?.[0] ||
-          error?.response?.data?.message ||
-          "Update failed"
+        error?.response?.data?.message ||
+        "Update failed"
       );
     } finally {
       setSaving(false);
@@ -299,122 +299,122 @@ const PersonalInfo = ({ navigation }) => {
   return (
     <>
       <View style={styles.container}>
-      <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="x" size={28} color="#ef4444" />
-        </TouchableOpacity>
+        <View style={styles.topBar}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Icon name="x" size={28} color="#ef4444" />
+          </TouchableOpacity>
 
-        <TouchableOpacity disabled={saving} onPress={handleSave}>
-          {saving ? (
-            <ActivityIndicator size="small" color="#111827" />
-          ) : (
-            <Icon name="check" size={28} color="#111827" />
-          )}
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <Text style={styles.title}>Personal Information</Text>
-
-        <TouchableOpacity style={styles.imagePicker} onPress={handleImageSelection}>
-          {selectedImage?.uri ? (
-            <Image source={{ uri: selectedImage.uri }} style={styles.previewImage} />
-          ) : (
-            <View style={styles.imagePlaceholder}>
-              <Icon name="camera" size={22} color="#f59e0b" />
-              <Text style={styles.imagePlaceholderText}>Upload profile picture</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-
-        <View style={styles.card}>
-          <Text style={styles.label}>Full Name</Text>
-          <TextInput
-            style={styles.input}
-            value={form.full_name}
-            onChangeText={(text) => handleChange("full_name", text)}
-            placeholder="Enter full name"
-          />
-
-          <Text style={styles.label}>Username</Text>
-          <TextInput
-            style={styles.input}
-            value={form.username}
-            onChangeText={(text) => handleChange("username", text)}
-            placeholder="Enter username"
-            autoCapitalize="none"
-          />
-
-          <Text style={styles.label}>Phone</Text>
-          <TextInput
-            style={styles.input}
-            value={String(form.phone)}
-            onChangeText={handlePhoneChange}
-            placeholder="Enter phone"
-            keyboardType="phone-pad"
-            maxLength={10}
-          />
-
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={[styles.input, styles.disabledInput]}
-            value={form.email}
-            editable={false}
-            placeholder="Email"
-          />
-
-          <Text style={styles.label}>Pincode</Text>
-          <View style={styles.inlineInputWrap}>
-            <TextInput
-              style={[styles.input, styles.inlineInput]}
-              value={form.pincode}
-              onChangeText={handlePincodeChange}
-              placeholder="Enter pincode"
-              keyboardType="number-pad"
-              maxLength={6}
-            />
-            {pincodeLoading && (
-              <ActivityIndicator size="small" color="#f59e0b" style={styles.inlineLoader} />
+          <TouchableOpacity disabled={saving} onPress={handleSave}>
+            {saving ? (
+              <ActivityIndicator size="small" color="#111827" />
+            ) : (
+              <Icon name="check" size={28} color="#111827" />
             )}
-          </View>
-
-          <Text style={styles.label}>City</Text>
-          <TextInput style={[styles.input, styles.disabledInput]} value={form.city} editable={false} />
-
-          <Text style={styles.label}>District</Text>
-          <TextInput
-            style={[styles.input, styles.disabledInput]}
-            value={form.district}
-            editable={false}
-          />
-
-          <Text style={styles.label}>State</Text>
-          <TextInput style={[styles.input, styles.disabledInput]} value={form.state} editable={false} />
-
-          <Text style={styles.label}>Languages</Text>
-          <View style={styles.languageWrap}>
-            {LANGUAGE_OPTIONS.map((language) => {
-              const active = form.languages.includes(language);
-              return (
-                <TouchableOpacity
-                  key={language}
-                  style={[styles.languageChip, active && styles.languageChipActive]}
-                  onPress={() => toggleLanguage(language)}
-                >
-                  <Text
-                    style={[styles.languageChipText, active && styles.languageChipTextActive]}
-                  >
-                    {language}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          </TouchableOpacity>
         </View>
-      </ScrollView>
+
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <Text style={styles.title}>Personal Information</Text>
+
+          <TouchableOpacity style={styles.imagePicker} onPress={handleImageSelection}>
+            {selectedImage?.uri ? (
+              <Image source={{ uri: selectedImage.uri }} style={styles.previewImage} />
+            ) : (
+              <View style={styles.imagePlaceholder}>
+                <Icon name="camera" size={22} color="#f59e0b" />
+                <Text style={styles.imagePlaceholderText}>Upload profile picture</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          <View style={styles.card}>
+            <Text style={styles.label}>Full Name</Text>
+            <TextInput
+              style={styles.input}
+              value={form.full_name}
+              onChangeText={(text) => handleChange("full_name", text)}
+              placeholder="Enter full name"
+            />
+
+            <Text style={styles.label}>Username</Text>
+            <TextInput
+              style={styles.input}
+              value={form.username}
+              onChangeText={(text) => handleChange("username", text)}
+              placeholder="Enter username"
+              autoCapitalize="none"
+            />
+
+            <Text style={styles.label}>Phone</Text>
+            <TextInput
+              style={styles.input}
+              value={String(form.phone)}
+              onChangeText={handlePhoneChange}
+              placeholder="Enter phone"
+              keyboardType="phone-pad"
+              maxLength={10}
+            />
+
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              style={[styles.input, styles.disabledInput]}
+              value={form.email}
+              editable={false}
+              placeholder="Email"
+            />
+
+            <Text style={styles.label}>Pincode</Text>
+            <View style={styles.inlineInputWrap}>
+              <TextInput
+                style={[styles.input, styles.inlineInput]}
+                value={form.pincode}
+                onChangeText={handlePincodeChange}
+                placeholder="Enter pincode"
+                keyboardType="number-pad"
+                maxLength={6}
+              />
+              {pincodeLoading && (
+                <ActivityIndicator size="small" color="#f59e0b" style={styles.inlineLoader} />
+              )}
+            </View>
+
+            <Text style={styles.label}>City</Text>
+            <TextInput style={[styles.input, styles.disabledInput]} value={form.city} editable={false} />
+
+            <Text style={styles.label}>District</Text>
+            <TextInput
+              style={[styles.input, styles.disabledInput]}
+              value={form.district}
+              editable={false}
+            />
+
+            <Text style={styles.label}>State</Text>
+            <TextInput style={[styles.input, styles.disabledInput]} value={form.state} editable={false} />
+
+            <Text style={styles.label}>Languages</Text>
+            <View style={styles.languageWrap}>
+              {LANGUAGE_OPTIONS.map((language) => {
+                const active = form.languages.includes(language);
+                return (
+                  <TouchableOpacity
+                    key={language}
+                    style={[styles.languageChip, active && styles.languageChipActive]}
+                    onPress={() => toggleLanguage(language)}
+                  >
+                    <Text
+                      style={[styles.languageChipText, active && styles.languageChipTextActive]}
+                    >
+                      {language}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        </ScrollView>
       </View>
 
       <Modal

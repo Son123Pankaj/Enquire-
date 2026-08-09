@@ -15,3 +15,8 @@ export const createCashfreeOrder = async (amountCents) => {
 
   return response.data;
 };
+
+export const verifyCashfreePayment = async (orderId) => {
+  const response = await Api.get(`cashfree/payments/${orderId}/verify`);
+  return response.data;
+};

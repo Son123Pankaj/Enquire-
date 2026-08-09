@@ -2,272 +2,230 @@ import React, { useState } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   TextInput,
   TouchableOpacity,
-  SafeAreaView,
+  StyleSheet,
   ActivityIndicator,
-  useColorScheme,
+  Image,
 } from "react-native";
-import LinearGradient from "react-native-linear-gradient";
+import Icon from "react-native-vector-icons/Feather";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  loginUser,
+  extractAuthToken,
+  extractIsBusiness,
+  fetchCurrentUserProfile,
+} from "../services/auth";
 import { showToast } from "../utils/toast";
 
 export default function LoginScreen({ navigation }) {
-  const [phone, setPhone] = useState("");
-  const [showPromo, setShowPromo] = useState(false);
-  const [promoCode, setPromoCode] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [secure, setSecure] = useState(true);
   const [loading, setLoading] = useState(false);
 
-  const scheme = useColorScheme();
-  const isDark = scheme === "dark";
+  const resolveBusinessFlag = async (loginResponse) => {
+    const loginFlag = extractIsBusiness(loginResponse);
+    if (typeof loginFlag === "boolean") {
+      return loginFlag;
+    }
 
-  const handleLogin = () => {
-    if (phone.length !== 10) {
-      showToast("Enter valid mobile number");
+    const profile = await fetchCurrentUserProfile();
+    return extractIsBusiness(profile) ?? false;
+  };
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      showToast("Please fill all fields");
       return;
     }
 
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    setTimeout(() => {
-      const generatedOtp = Math.floor(1000 + Math.random() * 9000);
+      const response = await loginUser({
+        account: { email, password },
+      });
 
-      showToast(`Your OTP is ${generatedOtp}`);
+      const token = extractAuthToken(response);
+
+      if (!token) {
+        showToast("Token not received");
+        setLoading(false);
+        return;
+      }
+
+      await AsyncStorage.setItem("token", token);
+
+      const isBusiness = await resolveBusinessFlag(response);
+      await AsyncStorage.setItem("is_business", JSON.stringify(isBusiness));
 
       setLoading(false);
-
-      navigation.navigate("OTP", {
-        phone,
-        otp: generatedOtp,
-      });
-    }, 1500);
+      navigation.replace(isBusiness ? "Home" : "MainApp");
+    } catch (error) {
+      setLoading(false);
+      showToast(error?.response?.data?.message || "Login failed");
+    }
   };
 
   return (
-    <LinearGradient
-      colors={
-        isDark
-          ? ["#0f2027", "#203a43", "#2c5364"]
-          : ["#4facfe", "#00f2fe"]
-      }
-      style={styles.container}
-    >
-      <SafeAreaView style={{ flex: 1, justifyContent: "center" }}>
-        
-        {/* 🔥 TOP */}
-        <View style={styles.topSection}>
-          <Text style={styles.logo}>E</Text>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Image
+          source={require("../../assets/logo-1.webp")}
+          style={styles.logo}
+        />
 
-          <Text style={styles.title}>
-            Welcome to{" "}
-            <Text style={styles.highlight}>PreviewTax</Text>
-          </Text>
+        <Text style={styles.brand}>Welcome to PreviewTax</Text>
+      </View>
 
-          <Text style={styles.subtitle}>
-            Enter your mobile number to continue
-          </Text>
+      <View style={styles.card}>
+        <Text style={styles.loginTitle}>Enter your email and password to continue</Text>
+
+        <View style={styles.inputBox}>
+          <Icon name="mail" size={18} color="#666" />
+          <TextInput
+            placeholder="Enter your email"
+            style={styles.input}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
         </View>
 
-        {/* 🔥 CARD */}
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: isDark ? "#1c1c1e" : "#fff" },
-          ]}
-        >
-          {/* 📱 Phone Input */}
-          <View style={styles.inputBox}>
-            <Text style={styles.country}>🇮🇳 +91</Text>
-            <TextInput
-              placeholder="Enter mobile number"
-              placeholderTextColor={isDark ? "#aaa" : "#999"}
-              keyboardType="numeric"
-              value={phone}
-              onChangeText={setPhone}
-              maxLength={10}
-              style={[
-                styles.input,
-                { color: isDark ? "#fff" : "#000" },
-              ]}
-            />
-          </View>
-
-          {/* 🎁 Promo Toggle */}
-          <TouchableOpacity onPress={() => setShowPromo(!showPromo)}>
-            <Text style={styles.promoText}>
-              + Add Promocode (optional)
-            </Text>
-          </TouchableOpacity>
-
-          {/* 🎟 Promo Input */}
-          {showPromo && (
-            <View style={styles.inputBox}>
-              <TextInput
-                placeholder="Enter referral code"
-                placeholderTextColor={isDark ? "#aaa" : "#999"}
-                value={promoCode}
-                onChangeText={setPromoCode}
-                style={[
-                  styles.input,
-                  { color: isDark ? "#fff" : "#000" },
-                ]}
-              />
-            </View>
-          )}
-
-          {/* 🔘 BUTTON */}
-          <TouchableOpacity
-            style={styles.button}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>
-                Continue Securely
-              </Text>
-            )}
+        <View style={styles.inputBox}>
+          <Icon name="lock" size={18} color="#666" />
+          <TextInput
+            placeholder="Enter your password"
+            secureTextEntry={secure}
+            style={styles.input}
+            value={password}
+            onChangeText={setPassword}
+          />
+          <TouchableOpacity onPress={() => setSecure(!secure)}>
+            <Icon name={secure ? "eye-off" : "eye"} size={18} color="#666" />
           </TouchableOpacity>
         </View>
 
-        {/* 📄 TERMS */}
-        <Text style={styles.terms}>
-          By continuing, you agree to our{" "}
-          <Text style={styles.link}>Terms & Conditions</Text>
+        <Text style={styles.termsText}>
+          By continuing, I agree to the <Text style={styles.highlight}>Terms</Text>
+          {" "} & <Text style={styles.highlight}>Privacy Policy</Text>
         </Text>
 
+        <TouchableOpacity
+          style={styles.button}
+          onPress={handleLogin}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Login</Text>
+          )}
+        </TouchableOpacity>
 
-        {/* 🔥 EMAIL LOGIN */}
-<TouchableOpacity
-  style={styles.emailBtn}
-  onPress={() => navigation.navigate("EmailLogin")}
->
-  <Text style={styles.emailText}>
-    Login with Email & Password
-  </Text>
-</TouchableOpacity>
+        <View style={styles.bottomRow}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("ForgotPassword")}
+          >
+            <Text style={styles.highlight}>Forgot Password?</Text>
+          </TouchableOpacity>
 
-{/* 🔥 CREATE ACCOUNT */}
-<TouchableOpacity
-  onPress={() => navigation.navigate("Signup")}
->
-  <Text style={styles.createAccount}>
-    Create Account
-  </Text>
-</TouchableOpacity>
-
-      </SafeAreaView>
-    </LinearGradient>
+          <TouchableOpacity onPress={() => navigation.navigate("Signup")}>
+            <Text style={styles.bottomText}>
+              New User? <Text style={styles.highlight}>Create Account</Text>
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#fff",
   },
-
-  topSection: {
+  header: {
     alignItems: "center",
-    marginBottom: 30,
+    marginTop: 70,
+    marginBottom: 20,
   },
-
   logo: {
-    fontSize: 42,
-    fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 10,
+    width: 120,
+    height: 120,
+    marginBottom: 0,
+    resizeMode: "contain",
   },
-
-  title: {
-    fontSize: 24,
-    fontWeight: "600",
-    color: "#fff",
+  brand: {
+    fontSize: 26,
+    fontWeight: "700",
+    color: "#1e293b",
   },
-
-  highlight: {
-    color: "#ffe082",
-  },
-
-  subtitle: {
-    color: "#eee",
-    marginTop: 5,
-  },
-
   card: {
+    backgroundColor: "#fff",
     marginHorizontal: 20,
-    padding: 20,
-    borderRadius: 20,
-    elevation: 8,
   },
-
+  loginTitle: {
+    fontSize: 15,
+    fontWeight: "500",
+    marginBottom: 18,
+    color: "#64748b",
+    textAlign: "center",
+  },
   inputBox: {
     flexDirection: "row",
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 15,
     alignItems: "center",
+    backgroundColor: "#f8fafc",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
-
-  country: {
-    marginRight: 10,
-    fontSize: 16,
-  },
-
   input: {
     flex: 1,
-    fontSize: 16,
+    padding: 14,
+    fontSize: 15,
+    color: "#0f172a",
   },
-
-  promoText: {
-    textAlign: "center",
-    color: "#4facfe",
-    marginBottom: 10,
-    fontWeight: "500",
-  },
-
   button: {
-    backgroundColor: "#000",
-    padding: 16,
+    backgroundColor: "#e67e22",
+    paddingVertical: 14,
     borderRadius: 12,
     alignItems: "center",
-    marginTop: 10,
+    marginTop: 15,
+    marginBottom: 10,
+    shadowColor: "#e67e22",
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
   },
-
   buttonText: {
     color: "#fff",
-    fontWeight: "bold",
+    fontWeight: "600",
     fontSize: 16,
   },
-
-  terms: {
-    textAlign: "center",
-    marginTop: 20,
+  termsText: {
     fontSize: 12,
-    color: "#eee",
+    color: "#64748b",
+    textAlign: "center",
+    marginTop: 8,
   },
-
-  link: {
-    color: "#ffe082",
+  highlight: {
+    color: "#e67e22",
     fontWeight: "600",
   },
-
-  emailBtn: {
-  marginTop: 15,
-  alignItems: "center",
-},
-
-emailText: {
-  color: "#4facfe",
-  fontWeight: "600",
-},
-
-createAccount: {
-  textAlign: "center",
-  marginTop: 15,
-  color: "#fff",
-  fontWeight: "600",
-},
+  bottomRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 12,
+  },
+  bottomText: {
+    color: "#475569",
+    fontSize: 13,
+  },
 });

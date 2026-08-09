@@ -87,10 +87,11 @@ export default function AgoraCallScreen() {
           setJoined(true);
           setCallStartTime(Date.now());
 
-          try {
+            const targetReceiverId = expert?.account_id || route.params?.receiverAccountId || expert?.id;
+            const normalizedCallType = callType === "audio" ? "voice" : callType;
             const response = await startCallHistory(
-              expert?.id,
-              callType,
+              targetReceiverId,
+              normalizedCallType,
               channelName
             );
             if (response?.id) {

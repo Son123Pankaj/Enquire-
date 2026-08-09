@@ -23,6 +23,22 @@ export const updateProfile = async (data) => {
   return account;
 };
 
+export const submitVerification = async (data) => {
+  const isFormData = typeof data?.append === "function";
+  const config = isFormData
+    ? {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    : undefined;
+
+  const res = await Api.patch("accounts/submit_verification", data, config);
+  const account = res.data?.account || null;
+  emitProfileRefresh("verification");
+  return account;
+};
+
 export const toggleBusinessAccount = async () => {
   const res = await Api.patch("accounts/toggle_business");
   return res.data;

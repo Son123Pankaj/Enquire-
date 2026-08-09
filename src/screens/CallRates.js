@@ -19,7 +19,7 @@ const toNumber = (value) => {
 
 const afterDeduction = (value) => {
   const numericValue = toNumber(value);
-  const finalAmount = numericValue - numericValue * 0.3;
+  const finalAmount = numericValue - numericValue * 0.2;
   return finalAmount > 0 ? finalAmount.toFixed(2) : "0.00";
 };
 

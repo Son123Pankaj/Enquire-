@@ -397,11 +397,29 @@ export default function HomeScreenDetails() {
                     <Icon name="message-circle" size={16} color="#4CAF50" />
                   </TouchableOpacity>
 
-                  <TouchableOpacity style={styles.actionBtn}>
+                  <TouchableOpacity
+                    style={styles.actionBtn}
+                    onPress={() => {
+                      if (item?.currently_available === false || item?.is_available === false) {
+                        showToast("This expert is currently unavailable");
+                        return;
+                      }
+                      navigation.navigate("ExpertDetailsScreen", { expert: item });
+                    }}
+                  >
                     <Icon name="phone-call" size={16} color="#2196F3" />
                   </TouchableOpacity>
 
-                  <TouchableOpacity style={styles.actionBtn}>
+                  <TouchableOpacity
+                    style={styles.actionBtn}
+                    onPress={() => {
+                      if (item?.currently_available === false || item?.is_available === false) {
+                        showToast("This expert is currently unavailable");
+                        return;
+                      }
+                      navigation.navigate("ExpertDetailsScreen", { expert: item });
+                    }}
+                  >
                     <Icon name="video" size={16} color="#E91E63" />
                   </TouchableOpacity>
                 </View>

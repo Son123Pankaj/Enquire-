@@ -3,7 +3,6 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import LoginScreen from "./src/auth/LoginScreen";
-import OTPScreen from "./src/auth/OtpScreen";
 import BottomTabs from "./src/component/BottomTab";
 import HomeScreenDetails from "./src/screens/HomeScreenDetails";
 import HomeScreen from "./src/screens/HomeScreen";
@@ -33,6 +32,7 @@ import Support from "./src/screens/Support";
 import Privacy from "./src/screens/Privacy";
 import DeleteAccountReasons from "./src/screens/DeleteAccountReasons";
 import DeleteAccountFeedback from "./src/screens/DeleteAccountFeedback";
+import PaymentStatusScreen from "./src/screens/PaymentStatusScreen";
 import ToastHost from "./src/component/ToastHost";
 
 const Stack = createNativeStackNavigator();
@@ -41,6 +41,7 @@ const linking = {
   config: {
     screens: {
       ExpertDetailsScreen: "expert/:uid",
+      PaymentStatus: "payment-status",
     },
   },
 };
@@ -53,11 +54,6 @@ export default function App() {
         <Stack.Screen
           name="Login"
           component={LoginScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="OTP"
-          component={OTPScreen}
           options={{ headerShown: false }}
         />
         <Stack.Screen
@@ -98,6 +94,11 @@ export default function App() {
         />
         <Stack.Screen name="Wallet" component={WalletScreen} />
         <Stack.Screen name="WalletTopup" component={CashfreeTopupScreen} />
+        <Stack.Screen
+          name="PaymentStatus"
+          component={PaymentStatusScreen}
+          options={{ headerShown: false }}
+        />
         <Stack.Screen name="Call" component={AgoraCallScreen} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen

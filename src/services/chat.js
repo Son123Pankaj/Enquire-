@@ -100,67 +100,93 @@ export const createChatSubscription = async ({
   const token = await AsyncStorage.getItem("token");
   const cableUrl = `${buildCableUrl()}?token=${encodeURIComponent(token || "")}`;
   const identifier = buildIdentifier(conversationId);
-  const socket = new WebSocket(cableUrl);
+  let socket = null;
+  let isClosedManually = false;
+  let reconnectTimer = null;
 
-  socket.onopen = () => {
-    socket.send(
-      JSON.stringify({
-        command: "subscribe",
-        identifier,
-      })
-    );
+  const connect = () => {
+    socket = new WebSocket(cableUrl);
+
+    socket.onopen = () => {
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(
+          JSON.stringify({
+            command: "subscribe",
+            identifier,
+          })
+        );
+      }
+    };
+
+    socket.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+
+        if (payload.type === "welcome" || payload.type === "ping") {
+          return;
+        }
+
+        if (payload.type === "reject_subscription") {
+          onError?.("Chat subscription was rejected");
+          return;
+        }
+
+        if (payload.message) {
+          onEvent?.(payload.message);
+        }
+      } catch (error) {
+        // Silent error handling for non-JSON or ping frames
+      }
+    };
+
+    socket.onerror = () => {
+      // Handled in onclose auto-reconnect
+    };
+
+    socket.onclose = () => {
+      if (!isClosedManually) {
+        reconnectTimer = setTimeout(() => {
+          connect();
+        }, 3000);
+      }
+    };
   };
 
-  socket.onmessage = (event) => {
-    try {
-      const payload = JSON.parse(event.data);
-
-      if (payload.type === "welcome" || payload.type === "ping") {
-        return;
-      }
-
-      if (payload.type === "reject_subscription") {
-        onError?.("Chat subscription was rejected");
-        return;
-      }
-
-      if (payload.message) {
-        onEvent?.(payload.message);
-      }
-    } catch (error) {
-      onError?.("Unable to process realtime chat update");
-    }
-  };
-
-  socket.onerror = () => {
-    onError?.("Realtime chat connection failed");
-  };
+  connect();
 
   const sendAction = (payload) => {
-    if (socket.readyState !== WebSocket.OPEN) {
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
       return false;
     }
 
-    socket.send(
-      JSON.stringify({
-        command: "message",
-        identifier,
-        data: JSON.stringify({
-          conversation_id: conversationId,
-          ...payload,
-        }),
-      })
-    );
-
-    return true;
+    try {
+      socket.send(
+        JSON.stringify({
+          command: "message",
+          identifier,
+          data: JSON.stringify({
+            conversation_id: conversationId,
+            ...payload,
+          }),
+        })
+      );
+      return true;
+    } catch (err) {
+      return false;
+    }
   };
 
   return {
     disconnect: () => {
-      if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
+      isClosedManually = true;
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+      }
+      if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
         socket.close();
       }
     },
     sendAction,
   };
 };
+

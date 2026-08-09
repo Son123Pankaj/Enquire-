@@ -133,6 +133,14 @@ const ProfileScreen = ({ navigation }) => {
   const isVerified = Boolean(user?.is_verified || user?.verified_badge);
   const businessStatus = user?.business_profile?.approval_status;
   const isBusiness = Boolean(user?.is_business);
+  const expertOnlyScreens = ["ShareProfile", "ProfileQR"];
+
+  const visibleMenuItems = menuItems.filter((item) => {
+    if (expertOnlyScreens.includes(item.screen)) {
+      return isBusiness;
+    }
+    return true;
+  });
 
   const handleBusinessToggle = (value) => {
     if (value) {
@@ -216,7 +224,7 @@ const ProfileScreen = ({ navigation }) => {
         >
           <View style={styles.bottomSheet}>
             <FlatList
-              data={menuItems}
+              data={visibleMenuItems}
               keyExtractor={(item, index) => index.toString()}
               showsVerticalScrollIndicator={false}
               renderItem={({ item }) => (

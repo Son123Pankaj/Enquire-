@@ -199,9 +199,10 @@ export default function ExpertDetailsScreen({ route }) {
 
     navigation.navigate("AgoraCall", {
       expert,
-      callType: "audio",
-      channelName: `expert-${expert?.id}-audio`,
-      uid: expert?.account_id || expert?.id || String(Math.floor(Math.random() * 1000000)),
+      receiverAccountId: expert?.account_id,
+      callType: "voice",
+      channelName: `expert-${expert?.id}-voice`,
+      uid: expert?.account_id || String(Math.floor(Math.random() * 1000000)),
     });
   };
 
@@ -218,9 +219,10 @@ export default function ExpertDetailsScreen({ route }) {
 
     navigation.navigate("AgoraCall", {
       expert,
+      receiverAccountId: expert?.account_id,
       callType: "video",
       channelName: `expert-${expert?.id}-video`,
-      uid: expert?.account_id || expert?.id || String(Math.floor(Math.random() * 1000000)),
+      uid: expert?.account_id || String(Math.floor(Math.random() * 1000000)),
     });
   };
 
