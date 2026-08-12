@@ -61,8 +61,7 @@ export default function LoginScreen({ navigation }) {
       const isBusiness = await resolveBusinessFlag(response);
       await AsyncStorage.setItem("is_business", JSON.stringify(isBusiness));
 
-      // Auto-register push token
-      registerPushTokenWithBackend().catch(() => {});
+      registerPushTokenWithBackend().catch(() => { });
 
       setLoading(false);
       navigation.replace(isBusiness ? "Home" : "MainApp");

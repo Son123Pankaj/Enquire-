@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "33471581543",
+    "project_id": "previewtax-app",
+    "storage_bucket": "previewtax-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:33471581543:android:7152b1c9174841295033c2",
+        "android_client_info": {
+          "package_name": "com.previewtax"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCoe4ue8_5KMN94PpwAXoayuY_d0yGBE1o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
