@@ -20,6 +20,7 @@ import {
   subscribeNotifications,
 } from "../services/notification";
 import { extractApiError } from "../utils/apiError";
+import { requestNotificationPermission } from "../utils/permissions";
 import { showToast } from "../utils/toast";
 
 const formatDate = (value) => {
@@ -38,6 +39,10 @@ export default function NotificationsScreen({ navigation }) {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [markingAll, setMarkingAll] = useState(false);
+
+  useEffect(() => {
+    requestNotificationPermission();
+  }, []);
 
   useEffect(() => {
     const unsubscribe = subscribeNotifications((snapshot) => {

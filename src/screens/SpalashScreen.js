@@ -53,39 +53,25 @@ export default function SplashScreen({ navigation }) {
       if (!token) {
         setTimeout(() => {
           navigation.replace("EmailLogin");
-        }, 3000);
+        }, 1500);
         return;
       }
 
-      let isBusiness = null;
-      const storedFlag = await AsyncStorage.getItem("is_business");
+      try {
+        const profile = await fetchCurrentUserProfile();
+        const isBusiness = Boolean(extractIsBusiness(profile));
+        await AsyncStorage.setItem("is_business", JSON.stringify(isBusiness));
 
-      if (storedFlag !== null) {
-        try {
-          isBusiness = JSON.parse(storedFlag);
-        } catch (error) {
-          isBusiness = storedFlag === "true";
-        }
+        setTimeout(() => {
+          navigation.replace(isBusiness ? "Home" : "MainApp");
+        }, 1500);
+      } catch (error) {
+        // Token is invalid or expired -> Clear storage & force redirect to EmailLogin
+        await AsyncStorage.multiRemove(["token", "is_business"]);
+        setTimeout(() => {
+          navigation.replace("EmailLogin");
+        }, 1500);
       }
-
-      if (typeof isBusiness !== "boolean") {
-        try {
-          const profile = await fetchCurrentUserProfile();
-          isBusiness = extractIsBusiness(profile);
-          if (typeof isBusiness === "boolean") {
-            await AsyncStorage.setItem(
-              "is_business",
-              JSON.stringify(isBusiness)
-            );
-          }
-        } catch (error) {
-          isBusiness = false;
-        }
-      }
-
-      setTimeout(() => {
-        navigation.replace(isBusiness ? "Home" : "MainApp");
-      }, 3000);
     };
 
     checkLogin();
@@ -114,8 +100,6 @@ export default function SplashScreen({ navigation }) {
             ]}
           />
         </View>
-
-        {/* <Text style={styles.appName}>Preview Tax</Text> */}
 
         <Text style={styles.taglineMain}>Tax Means Preview Tax</Text>
         <Text style={styles.tagline}>
@@ -147,13 +131,6 @@ const styles = StyleSheet.create({
     resizeMode: "contain",
     marginBottom: 10,
   },
-
-  // appName: {
-  //   fontSize: 32,
-  //   fontWeight: "bold",
-  //   color: "#FF7A00",
-  //   letterSpacing: 1,
-  // },
 
   tagline: {
     marginTop: 8,

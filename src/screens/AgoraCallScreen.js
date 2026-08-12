@@ -18,6 +18,7 @@ import RtcEngine, {
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { requestAgoraToken } from "../services/agora";
 import { startCallHistory, endCallHistory } from "../services/callHistory";
+import { requestCallPermissions } from "../utils/permissions";
 import { showToast } from "../utils/toast";
 
 export default function AgoraCallScreen() {
@@ -41,6 +42,16 @@ export default function AgoraCallScreen() {
 
     const setupAgora = async () => {
       try {
+        const hasPermissions = await requestCallPermissions(callType);
+        if (!hasPermissions) {
+          Alert.alert(
+            "Permissions Required",
+            "Microphone and camera permissions are required to start the call.",
+            [{ text: "OK", onPress: () => navigation.goBack() }]
+          );
+          return;
+        }
+
         const { appId, token } = await requestAgoraToken({
           channelName,
           uid,
@@ -124,7 +135,15 @@ export default function AgoraCallScreen() {
         engine.destroy();
       }
     };
-  }, [channelName, callType, navigation, uid]);
+  }, [
+    callType,
+    channelName,
+    expert?.account_id,
+    expert?.id,
+    navigation,
+    route.params?.receiverAccountId,
+    uid,
+  ]);
 
   const toggleMute = async () => {
     const engine = engineRef.current;

@@ -3,8 +3,6 @@ import {
   ActivityIndicator,
   Image,
   Modal,
-  PermissionsAndroid,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,6 +13,10 @@ import Icon from "react-native-vector-icons/Feather";
 import { launchCamera, launchImageLibrary } from "react-native-image-picker";
 import { getProfile, submitVerification } from "../services/profile";
 import { extractApiError } from "../utils/apiError";
+import {
+  requestCameraPermission,
+  requestGalleryPermission,
+} from "../utils/permissions";
 import { showToast } from "../utils/toast";
 
 const VERIFICATION_BENEFITS = [
@@ -79,42 +81,6 @@ export default function Verification({ navigation }) {
     } finally {
       setLoading(false);
     }
-  };
-
-  const requestCameraPermission = async () => {
-    if (Platform.OS !== "android") {
-      return true;
-    }
-
-    const granted = await PermissionsAndroid.request(
-      PermissionsAndroid.PERMISSIONS.CAMERA,
-      {
-        title: "Camera Permission",
-        message: "Camera permission is required to capture document photos.",
-        buttonPositive: "Allow",
-      }
-    );
-
-    return granted === PermissionsAndroid.RESULTS.GRANTED;
-  };
-
-  const requestGalleryPermission = async () => {
-    if (Platform.OS !== "android") {
-      return true;
-    }
-
-    const permission =
-      Platform.Version >= 33
-        ? PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES
-        : PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE;
-
-    const granted = await PermissionsAndroid.request(permission, {
-      title: "Gallery Permission",
-      message: "Gallery permission is required to select document photos.",
-      buttonPositive: "Allow",
-    });
-
-    return granted === PermissionsAndroid.RESULTS.GRANTED;
   };
 
   const openPickerModal = (targetKey) => {

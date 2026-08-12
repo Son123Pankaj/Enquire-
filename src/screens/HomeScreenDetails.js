@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -33,6 +33,8 @@ export default function HomeScreenDetails() {
   const isFocused = useIsFocused();
   const selectedCategory = route?.params?.selectedCategory || "ALL";
 
+  const searchTimerRef = useRef(null);
+  const searchTextRef = useRef(searchText);
   const [categories, setCategories] = useState([]);
   const [experts, setExperts] = useState([]);
   const [message, setMessage] = useState("");
@@ -45,6 +47,10 @@ export default function HomeScreenDetails() {
   const [currentUserProfile, setCurrentUserProfile] = useState(null);
 
   useEffect(() => {
+    searchTextRef.current = searchText;
+  }, [searchText]);
+
+  useEffect(() => {
     setActiveCategory(selectedCategory);
   }, [selectedCategory]);
 
@@ -55,16 +61,27 @@ export default function HomeScreenDetails() {
   }, []);
 
   useEffect(() => {
-    const delay = setTimeout(() => {
-      fetchBusiness(searchText);
-    }, 400);
+    if (searchTimerRef.current) {
+      clearTimeout(searchTimerRef.current);
+    }
 
-    return () => clearTimeout(delay);
+    searchTimerRef.current = setTimeout(() => {
+      fetchBusiness(searchText);
+    }, 2000);
+
+    return () => {
+      if (searchTimerRef.current) {
+        clearTimeout(searchTimerRef.current);
+      }
+    };
   }, [searchText]);
 
-  useEffect(() => {
-    fetchBusiness("");
-  }, []);
+  const handleSearchSubmit = () => {
+    if (searchTimerRef.current) {
+      clearTimeout(searchTimerRef.current);
+    }
+    fetchBusiness(searchText);
+  };
 
   useEffect(() => {
     if (!isFocused) {
@@ -73,32 +90,32 @@ export default function HomeScreenDetails() {
 
     fetchProfileStatus();
     fetchCategories();
-    fetchBusiness(searchText);
+    fetchBusiness(searchTextRef.current);
     fetchUnreadCount();
-  }, [isFocused, searchText]);
+  }, [isFocused]);
 
   useEffect(() => {
     const subscription = subscribeProfileRefresh(() => {
       fetchProfileStatus();
       fetchCategories();
-      fetchBusiness(searchText);
+      fetchBusiness(searchTextRef.current);
     });
 
     return () => subscription.remove();
-  }, [searchText]);
+  }, []);
 
   useEffect(() => {
     const subscription = DeviceEventEmitter.addListener("REFRESH_TAB_PAGE", (tabName) => {
       if (tabName === "HomeTab") {
         fetchProfileStatus();
         fetchCategories();
-        fetchBusiness(searchText);
+        fetchBusiness(searchTextRef.current);
         fetchUnreadCount();
       }
     });
 
     return () => subscription.remove();
-  }, [searchText]);
+  }, []);
 
   useEffect(() => {
     const unsubscribe = subscribeNotifications((snapshot) => {
@@ -193,8 +210,8 @@ export default function HomeScreenDetails() {
     activeCategory === "ALL"
       ? experts
       : activeCategory === "POPULAR"
-      ? experts.slice(0, 10)
-      : experts.filter((item) =>
+        ? experts.slice(0, 10)
+        : experts.filter((item) =>
           item.categories?.some((category) => category.name === activeCategory)
         );
 
@@ -287,6 +304,8 @@ export default function HomeScreenDetails() {
             placeholder="Search experts or categories..."
             value={searchText}
             onChangeText={setSearchText}
+            onSubmitEditing={handleSearchSubmit}
+            returnKeyType="search"
             style={styles.searchInput}
             autoFocus
           />
@@ -411,9 +430,9 @@ export default function HomeScreenDetails() {
                   </Text>
                   {Boolean(
                     item.verified_badge ||
-                      item.is_verified ||
-                      item.account?.verified_badge ||
-                      item.account?.is_verified
+                    item.is_verified ||
+                    item.account?.verified_badge ||
+                    item.account?.is_verified
                   ) && <VerifiedBadge size={14} />}
                 </View>
                 <Text style={styles.role}>{item.bio || "Business profile"}</Text>

@@ -34,6 +34,7 @@ const menuItems = [
   { name: "About App", icon: "info", screen: "About" },
   { name: "Account Privacy", icon: "lock", screen: "Privacy" },
   { name: "Support", icon: "help-circle", screen: "Support" },
+  { name: "Activity Log", icon: "activity", screen: "ActivityLog" },
   { name: "Logout", icon: "log-out", screen: "Logout", color: "red" },
 ];
 

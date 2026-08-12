@@ -33,7 +33,11 @@ import Privacy from "./src/screens/Privacy";
 import DeleteAccountReasons from "./src/screens/DeleteAccountReasons";
 import DeleteAccountFeedback from "./src/screens/DeleteAccountFeedback";
 import PaymentStatusScreen from "./src/screens/PaymentStatusScreen";
+import ActivityLogScreen from "./src/screens/ActivityLogScreen";
 import ToastHost from "./src/component/ToastHost";
+import { navigationRef } from "./src/utils/navigationRef";
+import { initAppStateMonitoring } from "./src/services/deviceMonitoring";
+import { initPushNotifications } from "./src/services/pushNotification";
 
 const Stack = createNativeStackNavigator();
 const linking = {
@@ -47,9 +51,13 @@ const linking = {
 };
 
 export default function App() {
+  React.useEffect(() => {
+    initAppStateMonitoring();
+    initPushNotifications();
+  }, []);
   return (
     <>
-      <NavigationContainer linking={linking}>
+      <NavigationContainer ref={navigationRef} linking={linking}>
         <Stack.Navigator initialRouteName="Splash">
         <Stack.Screen
           name="Login"
@@ -184,6 +192,11 @@ export default function App() {
         <Stack.Screen
           name="ForgotPassword"
           component={ForgotPassword}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="ActivityLog"
+          component={ActivityLogScreen}
           options={{ headerShown: false }}
         />
         </Stack.Navigator>

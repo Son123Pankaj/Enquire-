@@ -8,14 +8,17 @@ import {
   ActivityIndicator,
   ScrollView,
   Image,
-  PermissionsAndroid,
-  Platform,
   Modal,
 } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
 import { launchCamera, launchImageLibrary } from "react-native-image-picker";
 import { getProfile, updateProfile } from "../services/profile";
 import { getAddressByPincode } from "../services/pincode";
+import {
+  requestCameraPermission,
+  requestGalleryPermission,
+  requestLocationPermission,
+} from "../utils/permissions";
 import { showToast } from "../utils/toast";
 
 const LANGUAGE_OPTIONS = ["Hindi", "English"];
@@ -131,42 +134,6 @@ const PersonalInfo = ({ navigation }) => {
       fileName: asset.fileName || `profile-${Date.now()}.jpg`,
       fileSize: asset.fileSize || 0,
     });
-  };
-
-  const requestCameraPermission = async () => {
-    if (Platform.OS !== "android") {
-      return true;
-    }
-
-    const permission = PermissionsAndroid.PERMISSIONS.CAMERA;
-    const granted = await PermissionsAndroid.request(permission, {
-      title: "Camera Permission",
-      message: "Profile photo capture ke liye camera permission chahiye.",
-      buttonPositive: "OK",
-      buttonNegative: "Cancel",
-    });
-
-    return granted === PermissionsAndroid.RESULTS.GRANTED;
-  };
-
-  const requestGalleryPermission = async () => {
-    if (Platform.OS !== "android") {
-      return true;
-    }
-
-    const permission =
-      Platform.Version >= 33
-        ? PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES
-        : PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE;
-
-    const granted = await PermissionsAndroid.request(permission, {
-      title: "Gallery Permission",
-      message: "Profile photo choose karne ke liye gallery permission chahiye.",
-      buttonPositive: "OK",
-      buttonNegative: "Cancel",
-    });
-
-    return granted === PermissionsAndroid.RESULTS.GRANTED;
   };
 
   const pickFromCamera = async () => {

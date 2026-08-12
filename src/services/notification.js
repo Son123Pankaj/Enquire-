@@ -1,4 +1,5 @@
 import Api from "./api";
+import { showPushNotificationBanner } from "./pushNotification";
 
 let pollingTimer = null;
 let pollingConsumers = 0;
@@ -21,14 +22,28 @@ const emitSnapshot = () => {
 };
 
 const setSnapshot = (snapshot) => {
+  const previousUnread = latestSnapshot.unreadCount;
+  const newNotifications = Array.isArray(snapshot?.notifications)
+    ? snapshot.notifications
+    : latestSnapshot.notifications;
+  const newUnreadCount = typeof snapshot?.unreadCount === "number"
+    ? snapshot.unreadCount
+    : latestSnapshot.unreadCount;
+
+  // Trigger push banner toast when new unread notification arrives
+  if (newUnreadCount > previousUnread && newNotifications.length > 0) {
+    const latestNotif = newNotifications[0];
+    if (latestNotif && !latestNotif.read_at) {
+      showPushNotificationBanner({
+        title: latestNotif.title || "New Notification",
+        body: latestNotif.body || "",
+      });
+    }
+  }
+
   latestSnapshot = {
-    notifications: Array.isArray(snapshot?.notifications)
-      ? snapshot.notifications
-      : latestSnapshot.notifications,
-    unreadCount:
-      typeof snapshot?.unreadCount === "number"
-        ? snapshot.unreadCount
-        : latestSnapshot.unreadCount,
+    notifications: newNotifications,
+    unreadCount: newUnreadCount,
     fetchedAt: new Date().toISOString(),
   };
 

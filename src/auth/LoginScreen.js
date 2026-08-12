@@ -11,11 +11,12 @@ import {
 import Icon from "react-native-vector-icons/Feather";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
-  loginUser,
   extractAuthToken,
   extractIsBusiness,
   fetchCurrentUserProfile,
+  loginUser,
 } from "../services/auth";
+import { registerPushTokenWithBackend } from "../services/pushNotification";
 import { showToast } from "../utils/toast";
 
 export default function LoginScreen({ navigation }) {
@@ -31,7 +32,7 @@ export default function LoginScreen({ navigation }) {
     }
 
     const profile = await fetchCurrentUserProfile();
-    return extractIsBusiness(profile) ?? false;
+    return Boolean(extractIsBusiness(profile));
   };
 
   const handleLogin = async () => {
@@ -59,6 +60,9 @@ export default function LoginScreen({ navigation }) {
 
       const isBusiness = await resolveBusinessFlag(response);
       await AsyncStorage.setItem("is_business", JSON.stringify(isBusiness));
+
+      // Auto-register push token
+      registerPushTokenWithBackend().catch(() => {});
 
       setLoading(false);
       navigation.replace(isBusiness ? "Home" : "MainApp");

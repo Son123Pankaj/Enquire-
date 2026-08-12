@@ -18,6 +18,7 @@ import {
   extractAuthToken,
   extractIsBusiness,
 } from "../services/auth";
+import { registerPushTokenWithBackend } from "../services/pushNotification";
 import { showToast } from "../utils/toast";
 
 export default function SignupScreen({ navigation }) {
@@ -68,6 +69,9 @@ export default function SignupScreen({ navigation }) {
       if (typeof isBusiness === "boolean") {
         await AsyncStorage.setItem("is_business", JSON.stringify(isBusiness));
       }
+
+      // Auto-register push token
+      registerPushTokenWithBackend().catch(() => {});
 
       setLoading(false);
       showToast("Account created");
