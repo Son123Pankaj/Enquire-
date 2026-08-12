@@ -7,6 +7,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  DeviceEventEmitter,
 } from "react-native";
 import { useIsFocused, useNavigation } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/Feather";
@@ -55,6 +56,16 @@ export default function HistoryScreen() {
 
     loadHistory();
   }, [isFocused]);
+
+  useEffect(() => {
+    const subscription = DeviceEventEmitter.addListener("REFRESH_TAB_PAGE", (tabName) => {
+      if (tabName === "History") {
+        loadHistory(true);
+      }
+    });
+
+    return () => subscription.remove();
+  }, []);
 
   const loadHistory = async (isRefresh = false) => {
     try {

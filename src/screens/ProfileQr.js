@@ -163,11 +163,11 @@ const ProfileQR = ({ navigation }) => {
         return;
       }
 
-      const fileName = `enquire-profile-qr-${Date.now()}.png`;
+      const fileName = `previewtax-profile-qr-${Date.now()}.png`;
       const directoryPath =
         Platform.OS === "android"
           ? RNFS.DownloadDirectoryPath ||
-            `${RNFS.ExternalStorageDirectoryPath}/Download`
+          `${RNFS.ExternalStorageDirectoryPath}/Download`
           : RNFS.DocumentDirectoryPath;
 
       const directoryExists = await RNFS.exists(directoryPath);

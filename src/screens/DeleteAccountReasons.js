@@ -9,7 +9,7 @@ import {
 import Icon from "react-native-vector-icons/Feather";
 
 const reasons = [
-  "I don't want to use Enquire anymore",
+  "I don't want to use PreviewTax anymore",
   "I'm using a different account",
   "I'm worried about my privacy",
   "You are sending me too many emails/notifications",

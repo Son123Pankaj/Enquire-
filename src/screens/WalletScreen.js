@@ -10,6 +10,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  DeviceEventEmitter,
 } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
 import { useIsFocused, useNavigation } from "@react-navigation/native";
@@ -45,6 +46,16 @@ export default function WalletScreen() {
       loadWallet();
     }
   }, [isFocused]);
+
+  useEffect(() => {
+    const subscription = DeviceEventEmitter.addListener("REFRESH_TAB_PAGE", (tabName) => {
+      if (tabName === "Wallet") {
+        loadWallet();
+      }
+    });
+
+    return () => subscription.remove();
+  }, []);
 
   const loadWallet = async () => {
     setLoading(true);

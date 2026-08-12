@@ -12,7 +12,7 @@ export default function CustomShimmer({ style }) {
         useNativeDriver: true,
       })
     ).start();
-  }, []);
+  }, [shimmerAnim]);
 
   const translateX = shimmerAnim.interpolate({
     inputRange: [0, 1],

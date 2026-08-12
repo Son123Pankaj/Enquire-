@@ -8,10 +8,12 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
+  DeviceEventEmitter,
 } from "react-native";
 import { useIsFocused, useNavigation, useRoute } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/Feather";
 import ShimmerCard from "../component/ShimmerCard";
+import VerifiedBadge from "../component/VerifiedBadge";
 import { getCategories } from "../services/category";
 import { getBusiness } from "../services/business";
 import { getProfile } from "../services/profile";
@@ -40,6 +42,7 @@ export default function HomeScreenDetails() {
   const [showSearch, setShowSearch] = useState(false);
   const [activeCategory, setActiveCategory] = useState(selectedCategory);
   const [showProfileWarning, setShowProfileWarning] = useState(false);
+  const [currentUserProfile, setCurrentUserProfile] = useState(null);
 
   useEffect(() => {
     setActiveCategory(selectedCategory);
@@ -85,6 +88,19 @@ export default function HomeScreenDetails() {
   }, [searchText]);
 
   useEffect(() => {
+    const subscription = DeviceEventEmitter.addListener("REFRESH_TAB_PAGE", (tabName) => {
+      if (tabName === "HomeTab") {
+        fetchProfileStatus();
+        fetchCategories();
+        fetchBusiness(searchText);
+        fetchUnreadCount();
+      }
+    });
+
+    return () => subscription.remove();
+  }, [searchText]);
+
+  useEffect(() => {
     const unsubscribe = subscribeNotifications((snapshot) => {
       if (typeof snapshot?.unreadCount === "number") {
         setNotifications(snapshot.unreadCount);
@@ -118,6 +134,7 @@ export default function HomeScreenDetails() {
   const fetchProfileStatus = async () => {
     try {
       const profile = await getProfile();
+      setCurrentUserProfile(profile);
       const hasMissingDetails =
         !profile?.phone ||
         !profile?.state ||
@@ -127,6 +144,7 @@ export default function HomeScreenDetails() {
 
       setShowProfileWarning(hasMissingDetails);
     } catch (error) {
+      setCurrentUserProfile(null);
       setShowProfileWarning(false);
     }
   };
@@ -180,7 +198,20 @@ export default function HomeScreenDetails() {
           item.categories?.some((category) => category.name === activeCategory)
         );
 
+  const currentUserId = currentUserProfile?.id;
+  const currentBusinessId = currentUserProfile?.business_profile?.id;
+
   const finalExperts = filteredExperts.filter((item) => {
+    if (
+      currentUserId &&
+      (item.account_id === currentUserId || item.account?.id === currentUserId)
+    ) {
+      return false;
+    }
+    if (currentBusinessId && item.id === currentBusinessId) {
+      return false;
+    }
+
     const businessName = item.business_name?.toLowerCase() || "";
     const matchesName = businessName.includes(normalizedSearch);
     const matchesCategory = item.categories?.some((category) =>
@@ -374,9 +405,17 @@ export default function HomeScreenDetails() {
               )}
 
               <View style={styles.textWrap}>
-                <Text style={styles.name}>
-                  {item.account?.full_name || item.business_name || "Expert"}
-                </Text>
+                <View style={styles.nameRow}>
+                  <Text style={styles.name}>
+                    {item.account?.full_name || item.business_name || "Expert"}
+                  </Text>
+                  {Boolean(
+                    item.verified_badge ||
+                      item.is_verified ||
+                      item.account?.verified_badge ||
+                      item.account?.is_verified
+                  ) && <VerifiedBadge size={14} />}
+                </View>
                 <Text style={styles.role}>{item.bio || "Business profile"}</Text>
                 <Text style={styles.rating}>
                   {"★★★★★ "} {item.avg_rating || "0.0"} ({item.reviews_count || 0})
@@ -620,6 +659,11 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 24,
     fontWeight: "700",
+  },
+
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
 
   name: {

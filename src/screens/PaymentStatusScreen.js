@@ -22,25 +22,25 @@ export default function PaymentStatusScreen() {
   const [errorMessage, setErrorMessage] = useState(null);
 
   useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        setLoading(true);
+        setErrorMessage(null);
+        const res = await verifyCashfreePayment(orderId);
+        setStatusResult(res);
+      } catch (error) {
+        setErrorMessage(extractApiError(error, "Unable to verify payment status"));
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (orderId) {
       checkStatus();
     } else {
       setLoading(false);
     }
   }, [orderId]);
-
-  const checkStatus = async () => {
-    try {
-      setLoading(true);
-      setErrorMessage(null);
-      const res = await verifyCashfreePayment(orderId);
-      setStatusResult(res);
-    } catch (error) {
-      setErrorMessage(extractApiError(error, "Unable to verify payment status"));
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleGoToWallet = () => {
     navigation.reset({

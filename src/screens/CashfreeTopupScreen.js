@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { createCashfreeOrder } from "../services/payments";
+import { extractApiError } from "../utils/apiError";
 import { showToast } from "../utils/toast";
 
 export default function CashfreeTopupScreen() {
@@ -45,7 +46,8 @@ export default function CashfreeTopupScreen() {
       await Linking.openURL(data.payment_link);
       showToast("Payment page opened. Complete the flow to top up your wallet.");
     } catch (error) {
-      Alert.alert("Top-up failed", error.message || "Unable to start payment");
+      const errorMessage = extractApiError(error, "Unable to start payment");
+      Alert.alert("Top-up failed", errorMessage);
     } finally {
       setLoading(false);
     }

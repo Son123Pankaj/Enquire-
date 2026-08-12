@@ -1,4 +1,5 @@
 import React from "react";
+import { DeviceEventEmitter } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Icon from "react-native-vector-icons/Feather";
 
@@ -8,6 +9,19 @@ import WalletScreen from "../screens/WalletScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 
 const Tab = createBottomTabNavigator();
+
+const createTabListeners = (routeName) => ({ navigation }) => ({
+  tabPress: () => {
+    if (navigation.isFocused()) {
+      DeviceEventEmitter.emit("REFRESH_TAB_PAGE", routeName);
+    }
+  },
+});
+
+const renderHomeIcon = ({ color }) => <Icon name="home" size={22} color={color} />;
+const renderHistoryIcon = ({ color }) => <Icon name="clock" size={22} color={color} />;
+const renderWalletIcon = ({ color }) => <Icon name="credit-card" size={22} color={color} />;
+const renderProfileIcon = ({ color }) => <Icon name="user" size={22} color={color} />;
 
 export default function BottomTabs() {
   return (
@@ -23,40 +37,36 @@ export default function BottomTabs() {
       <Tab.Screen
         name="HomeTab"
         component={HomeScreenDetails}
+        listeners={createTabListeners("HomeTab")}
         options={{
-          tabBarIcon: ({ color }) => (
-            <Icon name="home" size={22} color={color} />
-          ),
+          tabBarIcon: renderHomeIcon,
         }}
       />
 
       <Tab.Screen
         name="History"
         component={HistoryScreen}
+        listeners={createTabListeners("History")}
         options={{
-          tabBarIcon: ({ color }) => (
-            <Icon name="clock" size={22} color={color} />
-          ),
+          tabBarIcon: renderHistoryIcon,
         }}
       />
 
       <Tab.Screen
         name="Wallet"
         component={WalletScreen}
+        listeners={createTabListeners("Wallet")}
         options={{
-          tabBarIcon: ({ color }) => (
-            <Icon name="credit-card" size={22} color={color} />
-          ),
+          tabBarIcon: renderWalletIcon,
         }}
       />
 
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
+        listeners={createTabListeners("Profile")}
         options={{
-          tabBarIcon: ({ color }) => (
-            <Icon name="user" size={22} color={color} />
-          ),
+          tabBarIcon: renderProfileIcon,
         }}
       />
     </Tab.Navigator>

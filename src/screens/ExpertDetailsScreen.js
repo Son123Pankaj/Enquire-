@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Icon from "react-native-vector-icons/Feather";
 import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
+import VerifiedBadge from "../component/VerifiedBadge";
 import { useNavigation } from "@react-navigation/native";
 import {
   favoriteBusiness,
@@ -459,11 +460,12 @@ export default function ExpertDetailsScreen({ route }) {
 
           <View style={styles.nameRow}>
             <Text style={styles.name}>{displayName}</Text>
-            {expert.verified_badge && (
-              <View style={styles.verifiedBadge}>
-                <Icon name="check-circle" size={16} color="#fff" />
-              </View>
-            )}
+            {Boolean(
+              expert?.verified_badge ||
+                expert?.is_verified ||
+                expert?.account?.verified_badge ||
+                expert?.account?.is_verified
+            ) && <VerifiedBadge size={20} />}
           </View>
 
           <Text style={styles.bio}>{displayBio}</Text>

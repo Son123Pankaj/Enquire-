@@ -64,7 +64,7 @@ export default function LoginScreen({ navigation }) {
       navigation.replace(isBusiness ? "Home" : "MainApp");
     } catch (error) {
       setLoading(false);
-      showToast(error?.response?.data?.message || "Login failed");
+      showToast(error?.response?.data?.errors || "Login failed");
     }
   };
 
@@ -89,7 +89,7 @@ export default function LoginScreen({ navigation }) {
             style={styles.input}
             value={email}
             onChangeText={setEmail}
-            keyboardType= "email-address"
+            keyboardType="email-address"
           />
         </View>
 

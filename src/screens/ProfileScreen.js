@@ -11,10 +11,12 @@ import {
   Switch,
   Alert,
   BackHandler,
+  DeviceEventEmitter,
 } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
 import { useIsFocused } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import VerifiedBadge from "../component/VerifiedBadge";
 import { getProfile } from "../services/profile";
 import { showToast } from "../utils/toast";
 
@@ -49,6 +51,16 @@ const ProfileScreen = ({ navigation }) => {
 
     fetchProfile();
   }, [isFocused]);
+
+  useEffect(() => {
+    const subscription = DeviceEventEmitter.addListener("REFRESH_TAB_PAGE", (tabName) => {
+      if (tabName === "Profile") {
+        fetchProfile();
+      }
+    });
+
+    return () => subscription.remove();
+  }, []);
 
   useEffect(() => {
     if (!menuVisible) {
@@ -169,14 +181,12 @@ const ProfileScreen = ({ navigation }) => {
 
           <View style={styles.nameRow}>
             <Text style={styles.name}>{displayName}</Text>
-            {isVerified && (
-              <View style={styles.badge}>
-                <Icon name="check-circle" size={14} color="#fff" />
-                <Text style={styles.badgeText}>Verified</Text>
-              </View>
-            )}
+            {isVerified && <VerifiedBadge size={18} />}
           </View>
-          <Text style={styles.username}>{username}</Text>
+          <View style={styles.usernameRow}>
+            <Text style={styles.username}>{username}</Text>
+            {isVerified && <VerifiedBadge size={14} />}
+          </View>
           {businessStatus ? (
             <Text style={styles.statusText}>
               {businessStatus.charAt(0).toUpperCase() + businessStatus.slice(1)}
@@ -312,8 +322,13 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
 
-  username: {
+  usernameRow: {
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 4,
+  },
+
+  username: {
     fontSize: 14,
     color: "#64748b",
   },

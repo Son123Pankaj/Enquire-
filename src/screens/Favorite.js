@@ -12,6 +12,7 @@ import {
 import { useIsFocused, useNavigation } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/Feather";
 import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
+import VerifiedBadge from "../component/VerifiedBadge";
 import {
   getFavoriteBusinesses,
   unfavoriteBusiness,
@@ -109,7 +110,15 @@ export default function FavoriteScreen() {
           )}
 
           <View style={styles.textWrap}>
-            <Text style={styles.name}>{displayName}</Text>
+            <View style={styles.nameRow}>
+              <Text style={styles.name}>{displayName}</Text>
+              {Boolean(
+                item.verified_badge ||
+                  item.is_verified ||
+                  item.account?.verified_badge ||
+                  item.account?.is_verified
+              ) && <VerifiedBadge size={14} />}
+            </View>
             <Text style={styles.bio}>{item.bio || "Business profile"}</Text>
           </View>
         </View>
@@ -253,6 +262,10 @@ const styles = StyleSheet.create({
   textWrap: {
     flex: 1,
     marginLeft: 12,
+  },
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   name: {
     fontSize: 15,
